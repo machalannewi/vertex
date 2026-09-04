@@ -10,7 +10,7 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 export const Input = forwardRef<HTMLInputElement, InputProps>(
   ({ className, icon, shortcut, ...props }, ref) => {
     return (
-      <div className="relative flex items-center">
+      <div className="relative flex w-full items-center">
         {icon && (
           <Search className="pointer-events-none absolute left-4 h-4 w-4 text-neutral-500" />
         )}
