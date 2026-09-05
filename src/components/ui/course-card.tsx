@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 
 export function CourseCard({
   icon,
+  iconClassName,
   title,
   description,
   level,
@@ -11,6 +12,7 @@ export function CourseCard({
   className,
 }: {
   icon: React.ReactNode;
+  iconClassName?: string;
   title: string;
   description: string;
   level: string;
@@ -25,7 +27,12 @@ export function CourseCard({
         className,
       )}
     >
-      <div className="flex h-10 w-10 items-center justify-center rounded-sm bg-neutral-900 font-display text-body-lg font-bold text-white">
+      <div
+        className={cn(
+          "flex h-10 w-10 items-center justify-center rounded-sm bg-neutral-900 font-display text-body-lg font-bold text-white",
+          iconClassName,
+        )}
+      >
         {icon}
       </div>
       <div className="flex flex-col gap-1">
