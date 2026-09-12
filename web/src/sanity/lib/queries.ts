@@ -71,7 +71,7 @@ export const COURSE_BY_SLUG_QUERY = defineQuery(`
     price,
     popular,
     studentCount,
-    outcomes,
+    learningOutcomes,
     "instructor": instructor->{_id, name, "slug": slug.current, photo, expertise, bio},
     "category": category->{_id, title, "slug": slug.current, icon},
     modules[] {

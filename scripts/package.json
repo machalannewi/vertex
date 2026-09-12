@@ -1,0 +1,14 @@
+{
+  "name": "vertex-scripts",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Offline tooling. Never run in the request path.",
+  "scripts": {
+    "ingest": "tsx ingest-videos.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "tsx": "^4",
+    "typescript": "^5"
+  }
+}
