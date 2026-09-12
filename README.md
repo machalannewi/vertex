@@ -1,36 +1,45 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Vertex
 
-## Getting Started
+An AI-powered learning platform with intelligent, timestamped video search. See `AGENTS.md` for the full product and architecture spec.
 
-First, run the development server:
+## Workspaces
+
+This repo has two standalone workspaces, each with its own `package.json`:
+
+- `studio/` — Sanity Studio (content model and authoring). Runs on Vite, independent of the Next.js app.
+- `web/` — the Next.js app (App Router), Clerk auth, and all server-side integration.
+
+They are intentionally not merged: the Studio gets its own fast dev/build, auto-updates, and TypeGen watch mode, and stays deployable independently of the app.
+
+## Getting started
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cd studio && npm install && cp .env.example .env.local   # fill in SANITY_STUDIO_PROJECT_ID / DATASET
+cd web && npm install && cp .env.example .env.local       # fill in Clerk keys, Sanity project/dataset, SANITY_API_READ_TOKEN
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Run both dev servers side by side (from the repo root, or `npm run dev` inside each workspace):
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm run dev:studio   # http://localhost:3333
+npm run dev:web      # http://localhost:3000
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+First-time Studio setup (from `studio/`):
 
-## Learn More
+```bash
+npx sanity login
+npx sanity deploy                                   # required before the Context MCP can serve this dataset
+npx sanity cors add http://localhost:3000 --credentials
+```
 
-To learn more about Next.js, take a look at the following resources:
+Generating types for the web app from the Studio's schema + queries (from `studio/`):
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+npm run typegen   # writes ../web/sanity.types.ts
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Deploy
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `web/` deploys as a standard Next.js app (e.g. Vercel).
+- `studio/` deploys independently via `npx sanity deploy` from within `studio/`.

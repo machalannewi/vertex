@@ -1,7 +1,7 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
-/node_modules
+**/node_modules
 /.pnp
 .pnp.*
 .yarn/*
@@ -14,8 +14,12 @@
 /coverage
 
 # next.js
-/.next/
-/out/
+web/.next/
+web/out/
+
+# sanity studio
+studio/dist/
+studio/.sanity/
 
 # production
 /build
@@ -32,10 +36,11 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # vercel
 .vercel
 
 # typescript
 *.tsbuildinfo
-next-env.d.ts
+web/next-env.d.ts
