@@ -4,40 +4,15 @@ import { Navbar } from "@/components/ui/navbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CourseCard } from "@/components/ui/course-card";
-
-const courses = [
-  {
-    icon: "N",
-    iconClassName: "bg-neutral-900",
-    title: "Next.js for Production",
-    description: "Build scalable, high-performance web applications with Next.js.",
-    level: "Intermediate",
-    duration: "18h 24m",
-    moduleCount: "12 modules",
-  },
-  {
-    icon: "D",
-    iconClassName: "bg-sky-500",
-    title: "Docker Essentials",
-    description: "Containerize applications and streamline your development workflow.",
-    level: "Beginner",
-    duration: "10h 12m",
-    moduleCount: "8 modules",
-  },
-  {
-    icon: "TS",
-    iconClassName: "bg-blue-600",
-    title: "TypeScript Deep Dive",
-    description: "Go beyond the basics and write safer, more expressive code.",
-    level: "Intermediate",
-    duration: "14h 36m",
-    moduleCount: "10 modules",
-  },
-];
+import { getAllCourses } from "@/sanity/lib/data";
+import { getCourseCardProps } from "@/lib/course-card-props";
 
 const barHeights = [72, 128, 96, 160, 56, 112, 144, 80, 168, 104, 64, 136];
 
-export default function Home() {
+export default async function Home() {
+  const allCourses = await getAllCourses();
+  const courses = allCourses.slice(0, 3);
+
   return (
     <div className="relative flex flex-1 flex-col overflow-hidden bg-neutral-50">
       <Navbar showActions />
@@ -90,16 +65,9 @@ export default function Home() {
 
           <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {courses.map((course) => (
-              <CourseCard
-                key={course.title}
-                icon={course.icon}
-                iconClassName={course.iconClassName}
-                title={course.title}
-                description={course.description}
-                level={course.level}
-                duration={course.duration}
-                moduleCount={course.moduleCount}
-              />
+              <Link key={course._id} href={`/courses/${course.slug}`}>
+                <CourseCard {...getCourseCardProps(course)} />
+              </Link>
             ))}
           </div>
         </section>
