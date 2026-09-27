@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { Navbar } from "@/components/ui/navbar";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { CourseCard } from "@/components/ui/course-card";
+import { TrackedCourseLink } from "@/components/analytics/tracked-course-link";
 import { getAllCourses } from "@/sanity/lib/data";
 import { getCourseCardProps } from "@/lib/course-card-props";
 
@@ -25,9 +25,13 @@ export default async function CoursesPage() {
         {courses.length > 0 ? (
           <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {courses.map((course) => (
-              <Link key={course._id} href={`/courses/${course.slug}`}>
+              <TrackedCourseLink
+                key={course._id}
+                courseSlug={course.slug}
+                source="course_catalog"
+              >
                 <CourseCard {...getCourseCardProps(course)} />
-              </Link>
+              </TrackedCourseLink>
             ))}
           </div>
         ) : (

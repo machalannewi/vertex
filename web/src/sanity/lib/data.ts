@@ -1,3 +1,4 @@
+import { logContentRequest } from '@/lib/posthog-logger'
 import { client } from './client'
 import { getLessonLabel, getModuleLabel } from './numbering'
 import {
@@ -28,11 +29,49 @@ export async function getInstructorBySlug(slug: string) {
 }
 
 export async function getAllCourses() {
-  return client.fetch(ALL_COURSES_QUERY)
+  const startedAt = Date.now()
+
+  try {
+    const courses = await client.fetch(ALL_COURSES_QUERY)
+    await logContentRequest({
+      operation: 'list_courses',
+      status: 'success',
+      durationMs: Date.now() - startedAt,
+      resultCount: courses.length,
+    })
+    return courses
+  } catch (error) {
+    await logContentRequest({
+      operation: 'list_courses',
+      status: 'error',
+      durationMs: Date.now() - startedAt,
+      errorType: error instanceof Error ? error.name : 'unknown',
+    })
+    throw error
+  }
 }
 
 export async function getCourseBySlug(slug: string) {
-  return client.fetch(COURSE_BY_SLUG_QUERY, { slug })
+  const startedAt = Date.now()
+
+  try {
+    const course = await client.fetch(COURSE_BY_SLUG_QUERY, { slug })
+    await logContentRequest({
+      operation: 'get_course',
+      status: 'success',
+      durationMs: Date.now() - startedAt,
+      resultCount: course ? 1 : 0,
+    })
+    return course
+  } catch (error) {
+    await logContentRequest({
+      operation: 'get_course',
+      status: 'error',
+      durationMs: Date.now() - startedAt,
+      errorType: error instanceof Error ? error.name : 'unknown',
+    })
+    throw error
+  }
 }
 
 export async function getLessonBySlug(slug: string) {

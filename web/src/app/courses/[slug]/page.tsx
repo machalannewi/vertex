@@ -1,10 +1,13 @@
 import { notFound } from "next/navigation";
 import Image from "next/image";
-import Link from "next/link";
-import { Bookmark, BookOpen, Clock, Signal, Users } from "lucide-react";
+import { BookOpen, Clock, Signal, Users } from "lucide-react";
 import { auth } from "@clerk/nextjs/server";
 import { Navbar } from "@/components/ui/navbar";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
+import {
+  CourseBookmarkButton,
+  CourseStartLink,
+} from "@/components/analytics/course-actions";
 import { Badge } from "@/components/ui/badge";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { ProgressBar } from "@/components/ui/progress-bar";
@@ -93,21 +96,18 @@ export default async function CoursePage({
 
             <div className="mt-2 flex items-center gap-3">
               {firstLessonSlug ? (
-                <Link
-                  href={`/lessons/${firstLessonSlug}`}
-                  className={buttonVariants({ variant: "primary" })}
-                >
-                  Start Course
-                </Link>
+                <CourseStartLink
+                  courseSlug={slug}
+                  lessonSlug={firstLessonSlug}
+                  label="Start Course"
+                  source="course_header"
+                />
               ) : (
                 <Button variant="primary" disabled>
                   Start Course
                 </Button>
               )}
-              <Button variant="tertiary" type="button">
-                <Bookmark className="h-4 w-4" />
-                Bookmark
-              </Button>
+              <CourseBookmarkButton courseSlug={slug} />
             </div>
           </div>
         </div>
@@ -139,6 +139,7 @@ export default async function CoursePage({
           </div>
 
           <ModuleAccordion
+            courseSlug={slug}
             modules={modules.map((courseModule) => ({
               title: courseModule.title ?? "",
               summary: courseModule.summary,
@@ -167,12 +168,12 @@ export default async function CoursePage({
               <ProgressBar value={0} className="max-w-sm" />
             </div>
             {firstLessonSlug && (
-              <Link
-                href={`/lessons/${firstLessonSlug}`}
-                className={buttonVariants({ variant: "primary" })}
-              >
-                Continue Learning
-              </Link>
+              <CourseStartLink
+                courseSlug={slug}
+                lessonSlug={firstLessonSlug}
+                label="Continue Learning"
+                source="progress_bar"
+              />
             )}
           </div>
         )}
