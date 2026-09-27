@@ -6,6 +6,7 @@ import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatDuration } from "@/lib/format";
 import { getLessonLabel } from "@/sanity/lib/numbering";
+import { captureEvent } from "@/components/analytics/capture-event";
 
 const VISIBLE_MODULE_LIMIT = 6;
 
@@ -23,9 +24,11 @@ export interface ModuleAccordionModule {
 }
 
 function ModuleRow({
+  courseSlug,
   courseModule,
   moduleIndex,
 }: {
+  courseSlug: string;
   courseModule: ModuleAccordionModule;
   moduleIndex: number;
 }) {
@@ -39,7 +42,14 @@ function ModuleRow({
     <div className="border-b border-neutral-100 last:border-b-0">
       <button
         type="button"
-        onClick={() => setOpen((prev) => !prev)}
+        onClick={() => {
+          captureEvent("course_module_toggled", {
+            course_slug: courseSlug,
+            module_index: moduleIndex + 1,
+            action: open ? "collapsed" : "expanded",
+          });
+          setOpen((prev) => !prev);
+        }}
         aria-expanded={open}
         className="flex w-full items-center gap-4 px-6 py-4 text-left hover:bg-neutral-50"
       >
@@ -73,6 +83,14 @@ function ModuleRow({
             <Link
               key={lesson._id}
               href={`/lessons/${lesson.slug}`}
+              onClick={() =>
+                captureEvent("course_lesson_selected", {
+                  course_slug: courseSlug,
+                  lesson_slug: lesson.slug,
+                  module_index: moduleIndex + 1,
+                  lesson_index: lessonIndex + 1,
+                })
+              }
               className="flex items-center justify-between gap-4 rounded-sm px-3 py-2 hover:bg-neutral-50"
             >
               <span className="font-sans text-body text-neutral-700">
@@ -93,8 +111,10 @@ function ModuleRow({
 }
 
 export function ModuleAccordion({
+  courseSlug,
   modules,
 }: {
+  courseSlug: string;
   modules: ModuleAccordionModule[];
 }) {
   const [showAll, setShowAll] = useState(false);
@@ -109,6 +129,7 @@ export function ModuleAccordion({
         {visibleModules.map((courseModule, index) => (
           <ModuleRow
             key={courseModule.title + index}
+            courseSlug={courseSlug}
             courseModule={courseModule}
             moduleIndex={index}
           />

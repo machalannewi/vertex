@@ -1,7 +1,10 @@
+"use client";
+
 import Link from "next/link";
 import { Bell } from "lucide-react";
 import { SignInButton, SignUpButton, Show, UserButton } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
+import { captureEvent } from "@/components/analytics/capture-event";
 
 export function Navbar({
   className,
@@ -49,6 +52,7 @@ export function Navbar({
               <SignInButton>
                 <button
                   type="button"
+                  onClick={() => captureEvent("sign_in_started", { source: "navbar" })}
                   className="text-neutral-700 hover:text-neutral-900"
                 >
                   Sign in
@@ -57,6 +61,7 @@ export function Navbar({
               <SignUpButton>
                 <button
                   type="button"
+                  onClick={() => captureEvent("sign_up_started", { source: "navbar" })}
                   className="rounded-xs bg-primary-500 px-4 py-2 font-medium text-white hover:bg-primary-600"
                 >
                   Sign up
