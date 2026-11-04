@@ -84,44 +84,73 @@ export const COURSE_BY_SLUG_QUERY = defineQuery(`
         "slug": slug.current,
         duration,
         freePreview,
-        posterImage,
+        thumbnail,
         studentCount
       }
     }
   }
 `)
 
-export const LESSON_BY_SLUG_QUERY = defineQuery(`
+// A lesson doesn't store its parent course, so the course (and its full
+// module/lesson outline for the sidebar and prev/next) comes from a reverse
+// reference.
+export const LESSON_PAGE_QUERY = defineQuery(`
   *[_type == "lesson" && slug.current == $slug][0] {
     _id,
     title,
     "slug": slug.current,
     videoUrl,
-    posterImage,
     duration,
     freePreview,
     studentCount,
     notes,
     keyPoints,
     proTip,
-    resources
+    resources,
+    "course": *[_type == "course" && references(^._id)][0] {
+      _id,
+      title,
+      "slug": slug.current,
+      coverImage,
+      level,
+      modules[] {
+        title,
+        lessons[]-> {
+          _id,
+          title,
+          "slug": slug.current,
+          duration
+        }
+      }
+    }
   }
 `)
 
-// Reverse lookup: a lesson doesn't store its parent course, so find the
-// course that references it and carry enough of the module/lesson shape to
-// compute "Module N" / "Lesson N.M" labels from array position.
-export const COURSE_FOR_LESSON_QUERY = defineQuery(`
-  *[_type == "course" && references($lessonId)][0] {
+// Grounds and hydrates search results. The agent only picks lesson ids and
+// seconds; everything a result card shows comes from here. The video's
+// chapter/chunk starts are fetched as numbers only (never transcript text)
+// so a "Watch from" second can be checked against stored data.
+export const SEARCH_HITS_QUERY = defineQuery(`
+  *[_type == "lesson" && _id in $ids] {
     _id,
     title,
     "slug": slug.current,
-    modules[] {
+    duration,
+    thumbnail,
+    keyPoints,
+    "intro": pt::text(notes[_type == "block" && (style == "normal" || !defined(style)) && !defined(listItem)][0...1]),
+    "course": *[_type == "course" && references(^._id)][0] {
       title,
-      lessons[]-> {
-        _id,
-        "slug": slug.current
+      "slug": slug.current,
+      "icon": category->icon,
+      "modules": modules[] {
+        title,
+        "lessonIds": lessons[]._ref
       }
+    },
+    "video": *[_type == "video" && url == ^.videoUrl][0] {
+      "chapterStarts": chapters[].startSeconds,
+      "chunkStarts": chunks[].startSeconds
     }
   }
 `)

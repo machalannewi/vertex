@@ -1,15 +1,14 @@
 import { logContentRequest } from '@/lib/posthog-logger'
 import { client } from './client'
-import { getLessonLabel, getModuleLabel } from './numbering'
+import { getLessonLabel } from './numbering'
 import {
   ALL_CATEGORIES_QUERY,
   ALL_COURSES_QUERY,
   ALL_INSTRUCTORS_QUERY,
   CATEGORY_BY_SLUG_QUERY,
   COURSE_BY_SLUG_QUERY,
-  COURSE_FOR_LESSON_QUERY,
   INSTRUCTOR_BY_SLUG_QUERY,
-  LESSON_BY_SLUG_QUERY,
+  LESSON_PAGE_QUERY,
 } from './queries'
 
 export async function getAllCategories() {
@@ -74,32 +73,93 @@ export async function getCourseBySlug(slug: string) {
   }
 }
 
-export async function getLessonBySlug(slug: string) {
-  return client.fetch(LESSON_BY_SLUG_QUERY, { slug })
+export interface OutlineLesson {
+  _id: string
+  title: string
+  slug: string
+  duration: number
+}
+
+export interface OutlineModule {
+  title: string
+  lessons: OutlineLesson[]
 }
 
 /**
- * A lesson doesn't store its parent course, so this resolves it by finding
- * the course that references the lesson, then locating the lesson's position
- * within that course's modules to derive its "Module N" / "Lesson N.M" labels.
+ * Fetches a lesson with its parent course (via reverse reference) and derives
+ * everything the lesson page needs from array order: the module/lesson
+ * labels and the previous/next lessons across the whole course.
  */
-export async function getCourseAndPositionForLesson(lessonId: string) {
-  const course = await client.fetch(COURSE_FOR_LESSON_QUERY, { lessonId })
-  if (!course?.modules) return null
+export async function getLessonPage(slug: string) {
+  const startedAt = Date.now()
 
-  for (const [moduleIndex, courseModule] of course.modules.entries()) {
-    const lessonIndex = (courseModule.lessons ?? []).findIndex(
-      (lesson) => lesson?._id === lessonId,
-    )
-    if (lessonIndex !== -1) {
-      return {
-        course: { _id: course._id, title: course.title, slug: course.slug },
-        moduleTitle: courseModule.title,
-        moduleLabel: getModuleLabel(moduleIndex),
-        lessonLabel: getLessonLabel(moduleIndex, lessonIndex),
-      }
-    }
+  let lesson
+  try {
+    lesson = await client.fetch(LESSON_PAGE_QUERY, { slug })
+    await logContentRequest({
+      operation: 'get_lesson',
+      status: 'success',
+      durationMs: Date.now() - startedAt,
+      resultCount: lesson ? 1 : 0,
+    })
+  } catch (error) {
+    await logContentRequest({
+      operation: 'get_lesson',
+      status: 'error',
+      durationMs: Date.now() - startedAt,
+      errorType: error instanceof Error ? error.name : 'unknown',
+    })
+    throw error
   }
 
-  return null
+  if (!lesson?.course) return null
+
+  const modules: OutlineModule[] = (lesson.course.modules ?? []).map(
+    (courseModule) => ({
+      title: courseModule.title ?? '',
+      lessons: (courseModule.lessons ?? []).flatMap((outlineLesson) =>
+        outlineLesson
+          ? [
+              {
+                _id: outlineLesson._id,
+                title: outlineLesson.title ?? '',
+                slug: outlineLesson.slug ?? '',
+                duration: outlineLesson.duration ?? 0,
+              },
+            ]
+          : [],
+      ),
+    }),
+  )
+
+  const flat = modules.flatMap((courseModule) => courseModule.lessons)
+  const flatIndex = flat.findIndex((item) => item._id === lesson._id)
+  if (flatIndex === -1) return null
+
+  const moduleIndex = modules.findIndex((courseModule) =>
+    courseModule.lessons.some((item) => item._id === lesson._id),
+  )
+  const lessonIndex = modules[moduleIndex].lessons.findIndex(
+    (item) => item._id === lesson._id,
+  )
+
+  const { course, ...lessonFields } = lesson
+
+  return {
+    lesson: lessonFields,
+    course: {
+      _id: course._id,
+      title: course.title ?? '',
+      slug: course.slug ?? '',
+      coverImage: course.coverImage,
+      level: course.level,
+    },
+    modules,
+    moduleIndex,
+    lessonIndex,
+    moduleTitle: modules[moduleIndex].title,
+    lessonLabel: getLessonLabel(moduleIndex, lessonIndex),
+    previousLesson: flat[flatIndex - 1] ?? null,
+    nextLesson: flat[flatIndex + 1] ?? null,
+  }
 }

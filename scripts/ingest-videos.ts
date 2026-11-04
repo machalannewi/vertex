@@ -2,18 +2,18 @@
  * Offline video ingestion pipeline (AGENTS.md section 9). Never run in the request path.
  *
  * Reads videos.json (lessonSlug -> YouTube video id/title/channel/duration/query),
- * fetches each video's public watch page, and turns its captions and chapter
+ * fetches each video's player data, and turns its captions and chapter
  * markers into a `video` document: a table of contents (chapters) and a
  * transcript split into short timestamped chunks. Writes one NDJSON document
  * per line to videos.seed.ndjson, importable the same way as seed.ndjson:
  *
  *   npx sanity dataset import ../scripts/videos.seed.ndjson production --replace
  *
- * Note: YouTube's caption URLs are signed against the requester's real IP.
- * From a network YouTube treats as suspicious (proxied, sandboxed, no real
- * egress IP), the caption fetch returns HTTP 200 with an empty body — a
- * known anti-scraping measure, not a bug here. Run this from a normal
- * machine/network for real results.
+ * Note: caption URLs from the web watch page carry `exp=xpe` and need a
+ * proof-of-origin token, so they return HTTP 200 with an empty body. The
+ * player data is instead requested from YouTube's InnerTube `player` endpoint
+ * as the ANDROID client, whose caption URLs work without one. That endpoint is
+ * undocumented and may change; if chunks come back empty again, check it first.
  */
 
 import {readFile, writeFile} from 'node:fs/promises'
@@ -22,8 +22,15 @@ import path from 'node:path'
 const INPUT_PATH = path.join(__dirname, 'videos.json')
 const OUTPUT_PATH = path.join(__dirname, 'videos.seed.ndjson')
 const TRANSCRIPT_WINDOW_SECONDS = 15
-const USER_AGENT =
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36'
+const REQUEST_PAUSE_MS = 500
+const INNERTUBE_PLAYER_URL = 'https://www.youtube.com/youtubei/v1/player?prettyPrint=false'
+const ANDROID_CLIENT = {
+  clientName: 'ANDROID',
+  clientVersion: '20.10.38',
+  androidSdkVersion: 34,
+  hl: 'en',
+}
+const ANDROID_USER_AGENT = 'com.google.android.youtube/20.10.38 (Linux; U; Android 14)'
 
 type VideoSource = {
   id: string
@@ -45,6 +52,16 @@ type VideoDocument = {
 
 type CaptionTrack = {baseUrl: string; languageCode: string; kind?: string}
 
+type PlayerResponse = {
+  playabilityStatus?: {status?: string; reason?: string}
+  captions?: {
+    playerCaptionsTracklistRenderer?: {captionTracks?: CaptionTrack[]}
+  }
+  videoDetails?: {shortDescription?: string}
+}
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
 async function readVideoSources(): Promise<Record<string, VideoSource>> {
   const raw = await readFile(INPUT_PATH, 'utf-8')
   return JSON.parse(raw)
@@ -58,63 +75,23 @@ function watchUrl(videoId: string): string {
   return `https://www.youtube.com/watch?v=${videoId}`
 }
 
-async function fetchWatchPageHtml(videoId: string): Promise<string> {
-  const res = await fetch(watchUrl(videoId), {
-    headers: {'User-Agent': USER_AGENT, 'Accept-Language': 'en-US,en;q=0.9'},
+async function fetchPlayerResponse(videoId: string): Promise<PlayerResponse> {
+  const res = await fetch(INNERTUBE_PLAYER_URL, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json', 'User-Agent': ANDROID_USER_AGENT},
+    body: JSON.stringify({context: {client: ANDROID_CLIENT}, videoId}),
   })
   if (!res.ok) {
-    throw new Error(`Watch page fetch failed with status ${res.status}`)
-  }
-  return res.text()
-}
-
-/**
- * YouTube embeds `var ytInitialPlayerResponse = {...};` as a script-tag
- * assignment. The object itself is valid JSON; find it by counting braces
- * (respecting string literals) rather than a fragile non-greedy regex.
- */
-function extractBalancedJson(html: string, marker: string): unknown {
-  const markerIndex = html.indexOf(marker)
-  if (markerIndex === -1) return null
-
-  const start = html.indexOf('{', markerIndex)
-  if (start === -1) return null
-
-  let depth = 0
-  let inString = false
-  let stringChar = ''
-  let escaped = false
-
-  for (let i = start; i < html.length; i++) {
-    const char = html[i]
-
-    if (inString) {
-      if (escaped) escaped = false
-      else if (char === '\\') escaped = true
-      else if (char === stringChar) inString = false
-      continue
-    }
-
-    if (char === '"' || char === "'") {
-      inString = true
-      stringChar = char
-      continue
-    }
-
-    if (char === '{') depth++
-    else if (char === '}') {
-      depth--
-      if (depth === 0) {
-        try {
-          return JSON.parse(html.slice(start, i + 1))
-        } catch {
-          return null
-        }
-      }
-    }
+    throw new Error(`Player fetch failed with status ${res.status}`)
   }
 
-  return null
+  const player = (await res.json()) as PlayerResponse
+  const status = player.playabilityStatus?.status
+  if (status && status !== 'OK') {
+    const reason = player.playabilityStatus?.reason
+    throw new Error(`Video not playable: ${status}${reason ? ` (${reason})` : ''}`)
+  }
+  return player
 }
 
 function decodeHtmlEntities(text: string): string {
@@ -136,23 +113,43 @@ function pickCaptionTrack(tracks: CaptionTrack[]): CaptionTrack | null {
   )
 }
 
+function cleanCueText(raw: string): string {
+  return decodeHtmlEntities(raw.replace(/<[^>]+>/g, ''))
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+// srv3 is `<p t="startMs" d="durationMs"><s>word</s>…</p>`; the legacy
+// format is `<text start="seconds">…</text>`.
+function parseCues(xml: string): {startSeconds: number; text: string}[] {
+  const cues: {startSeconds: number; text: string}[] = []
+  const srv3Pattern = /<p t="(\d+)"[^>]*>([\s\S]*?)<\/p>/g
+  const legacyPattern = /<text start="([\d.]+)"[^>]*>([\s\S]*?)<\/text>/g
+  let match: RegExpExecArray | null
+
+  while ((match = srv3Pattern.exec(xml)) !== null) {
+    const text = cleanCueText(match[2])
+    if (text) cues.push({startSeconds: Math.floor(Number(match[1]) / 1000), text})
+  }
+  if (cues.length > 0) return cues
+
+  while ((match = legacyPattern.exec(xml)) !== null) {
+    const text = cleanCueText(match[2])
+    if (text) cues.push({startSeconds: Math.round(Number(match[1])), text})
+  }
+  return cues
+}
+
 async function fetchTranscriptChunks(trackUrl: string): Promise<TranscriptChunk[]> {
-  const res = await fetch(trackUrl, {headers: {'User-Agent': USER_AGENT}})
+  const url = new URL(trackUrl)
+  url.searchParams.set('fmt', 'srv3')
+  const res = await fetch(url, {headers: {'User-Agent': ANDROID_USER_AGENT}})
   const xml = await res.text()
   if (!xml.trim()) {
-    return []
+    throw new Error('Caption track returned an empty body')
   }
 
-  const cues: {startSeconds: number; text: string}[] = []
-  const cuePattern = /<text start="([\d.]+)"[^>]*>([\s\S]*?)<\/text>/g
-  let match: RegExpExecArray | null
-  while ((match = cuePattern.exec(xml)) !== null) {
-    const startSeconds = Math.round(Number(match[1]))
-    const text = decodeHtmlEntities(match[2].replace(/<[^>]+>/g, '')).trim()
-    if (text) cues.push({startSeconds, text})
-  }
-
-  return mergeCuesIntoWindows(cues, TRANSCRIPT_WINDOW_SECONDS)
+  return mergeCuesIntoWindows(parseCues(xml), TRANSCRIPT_WINDOW_SECONDS)
 }
 
 function mergeCuesIntoWindows(
@@ -203,24 +200,14 @@ function extractChapters(description: string): Chapter[] {
   return chapters.length >= 2 ? chapters : []
 }
 
-async function buildVideoDocument(slug: string, source: VideoSource): Promise<VideoDocument> {
-  const url = watchUrl(source.id)
-  const html = await fetchWatchPageHtml(source.id)
+async function buildVideoDocument(source: VideoSource): Promise<VideoDocument> {
+  const playerResponse = await fetchPlayerResponse(source.id)
 
-  const playerResponse = extractBalancedJson(html, 'ytInitialPlayerResponse') as
-    | {
-        captions?: {
-          playerCaptionsTracklistRenderer?: {captionTracks?: CaptionTrack[]}
-        }
-        videoDetails?: {shortDescription?: string}
-      }
-    | null
-
-  const captionTracks = playerResponse?.captions?.playerCaptionsTracklistRenderer?.captionTracks ?? []
+  const captionTracks = playerResponse.captions?.playerCaptionsTracklistRenderer?.captionTracks ?? []
   const track = pickCaptionTrack(captionTracks)
   const chunks = track ? await fetchTranscriptChunks(track.baseUrl) : []
 
-  const description = playerResponse?.videoDetails?.shortDescription ?? ''
+  const description = playerResponse.videoDetails?.shortDescription ?? ''
   const chapters = extractChapters(description)
 
   return {
@@ -229,9 +216,24 @@ async function buildVideoDocument(slug: string, source: VideoSource): Promise<Vi
     // YouTube ids can start with "-" or "_".
     _id: `video.youtube-${sanitizeId(source.id)}`,
     _type: 'video',
-    url,
+    url: watchUrl(source.id),
     chapters,
     chunks,
+  }
+}
+
+// YouTube throttles bursts with a temporary LOGIN_REQUIRED ("confirm you're
+// not a bot"); backing off and retrying clears it.
+const RETRY_DELAYS_MS = [5_000, 15_000]
+
+async function buildWithRetry(source: VideoSource): Promise<VideoDocument> {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await buildVideoDocument(source)
+    } catch (error) {
+      if (attempt >= RETRY_DELAYS_MS.length) throw error
+      await sleep(RETRY_DELAYS_MS[attempt])
+    }
   }
 }
 
@@ -243,9 +245,10 @@ async function main() {
 
   for (const [slug, source] of entries) {
     try {
-      const doc = await buildVideoDocument(slug, source)
+      const doc = await buildWithRetry(source)
       lines.push(JSON.stringify(doc))
       summary.push({slug, chapters: doc.chapters.length, chunks: doc.chunks.length})
+      console.log(`${slug}: ${doc.chapters.length} chapters, ${doc.chunks.length} chunks`)
     } catch (error) {
       summary.push({
         slug,
@@ -254,6 +257,7 @@ async function main() {
         error: error instanceof Error ? error.message : String(error),
       })
     }
+    await sleep(REQUEST_PAUSE_MS)
   }
 
   await writeFile(OUTPUT_PATH, lines.join('\n') + '\n', 'utf-8')
@@ -262,9 +266,8 @@ async function main() {
   const empty = summary.filter((s) => !s.error && s.chunks === 0)
   console.log(`Wrote ${lines.length} of ${entries.length} video documents to ${OUTPUT_PATH}`)
   if (empty.length > 0) {
-    console.warn(
-      `${empty.length} video(s) had no transcript chunks (likely a caption fetch returning empty — see the note at the top of this file).`,
-    )
+    console.warn(`${empty.length} video(s) have no caption track, so no transcript chunks:`)
+    for (const e of empty) console.warn(`  ${e.slug}`)
   }
   if (failed.length > 0) {
     console.error(`${failed.length} video(s) failed:`)

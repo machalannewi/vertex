@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowRight, Star } from "lucide-react";
 import { Navbar } from "@/components/ui/navbar";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { SearchForm } from "@/components/search/search-form";
 import { CourseCard } from "@/components/ui/course-card";
 import { TrackedCourseLink } from "@/components/analytics/tracked-course-link";
 import { getAllCourses } from "@/sanity/lib/data";
@@ -41,11 +41,9 @@ export default async function Home() {
           </Button>
 
           <div className="mt-10 w-full max-w-2xl">
-            <Input
-              icon
-              shortcut="⌘K"
+            <SearchForm
               placeholder="Ask anything about your learning..."
-              className="h-14 rounded-lg shadow-md"
+              inputClassName="h-14 rounded-lg shadow-md"
             />
           </div>
         </main>

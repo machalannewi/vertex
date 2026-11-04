@@ -1,4 +1,4 @@
-import {PlayIcon} from '@sanity/icons'
+import {PlayIcon} from '@sanity/icons/Play'
 import {defineArrayMember, defineField, defineType} from 'sanity'
 
 export const lesson = defineType({
@@ -26,8 +26,8 @@ export const lesson = defineType({
       validation: (rule) => rule.required().uri({scheme: ['http', 'https']}),
     }),
     defineField({
-      name: 'posterImage',
-      title: 'Poster image',
+      name: 'thumbnail',
+      title: 'Thumbnail',
       type: 'image',
       options: {hotspot: true},
       fields: [
@@ -87,6 +87,6 @@ export const lesson = defineType({
     }),
   ],
   preview: {
-    select: {title: 'title', media: 'posterImage'},
+    select: {title: 'title', media: 'thumbnail'},
   },
 })
