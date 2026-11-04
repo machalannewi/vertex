@@ -1,4 +1,4 @@
-import {PlayIcon} from '@sanity/icons'
+import {PlayIcon} from '@sanity/icons/Play'
 import {defineArrayMember, defineField, defineType} from 'sanity'
 
 export const video = defineType({

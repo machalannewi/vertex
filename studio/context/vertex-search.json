@@ -1,0 +1,12 @@
+{
+  "_id": "vertex-search-context",
+  "_type": "sanity.agentContext",
+  "version": "1",
+  "name": "Vertex search",
+  "slug": {
+    "_type": "slug",
+    "current": "vertex-search"
+  },
+  "groqFilter": "_type in [\"course\", \"lesson\", \"category\", \"instructor\", \"video\"] && !(_id in path(\"drafts.**\"))",
+  "instructions": "### Relationships\n- A lesson does not reference its course. Find it with `*[_type == \"course\" && references(^._id)][0]`.\n- Modules are embedded objects in `course.modules[]` (not documents); each has `lessons[]` references. Module/lesson numbers come from array order and are not stored.\n- `video` is an internal lookup, one per unique video. Join it to its lesson with `lesson.videoUrl == video.url`. Never return a video without the lesson that uses it.\n\n### Matching\n- Split the query into keywords, wildcard each (`\"fetch*\"`), and OR them. Never match a whole phrase as one pattern.\n- `notes` is Portable Text: match `pt::text(notes)`, not `notes`.\n- Inside an array filter, `match` with an array of patterns returns nothing. OR single patterns instead: `chapters[label match \"cach*\" || label match \"fetch*\"]`.\n\n### Search recipe (run both, then merge)\n1. Lessons on topic: match `title`, `pt::text(notes)` and `keyPoints[]`; rank with `score(boost(title match \"kw*\", 3), ...)` and `order(_score desc)`.\n2. Video moments: match `chapters[].label` first. Only for videos with no chapter hit, fall back to `chunks[].text`. Project at most 3 matching chapters or chunks per video, never the whole `chunks` array. Every video has transcript chunks; only about half have chapters.\n3. Rank by specificity: an exact concept in a lesson title or chapter label beats a broad notes hit. Return every relevant match, not a handful.\n- Do not use `text::semanticSimilarity()`; embeddings are not enabled."
+}
