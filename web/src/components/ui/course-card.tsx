@@ -1,5 +1,6 @@
 import { BarChart2, Clock, Layers } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ProgressBar } from "@/components/ui/progress-bar";
 
 export function CourseCard({
   icon,
@@ -9,6 +10,7 @@ export function CourseCard({
   level,
   duration,
   moduleCount,
+  progressPercent,
   className,
 }: {
   icon: React.ReactNode;
@@ -18,6 +20,8 @@ export function CourseCard({
   level: string;
   duration: string;
   moduleCount: string;
+  /** When set and > 0, shows a started-course progress bar. */
+  progressPercent?: number;
   className?: string;
 }) {
   return (
@@ -55,6 +59,19 @@ export function CourseCard({
           {moduleCount}
         </span>
       </div>
+      {progressPercent !== undefined && progressPercent > 0 && (
+        <div className="flex flex-col gap-1.5">
+          <span
+            className={cn(
+              "font-sans text-small font-medium",
+              progressPercent >= 100 ? "text-emerald-500" : "text-primary-500",
+            )}
+          >
+            {progressPercent >= 100 ? "Completed" : "Continue learning"}
+          </span>
+          <ProgressBar value={progressPercent} />
+        </div>
+      )}
     </div>
   );
 }

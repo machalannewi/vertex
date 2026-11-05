@@ -7,8 +7,10 @@ import {
   ALL_INSTRUCTORS_QUERY,
   CATEGORY_BY_SLUG_QUERY,
   COURSE_BY_SLUG_QUERY,
+  COURSES_BY_INSTRUCTOR_QUERY,
   INSTRUCTOR_BY_SLUG_QUERY,
   LESSON_PAGE_QUERY,
+  MY_LEARNING_COURSES_QUERY,
 } from './queries'
 
 export async function getAllCategories() {
@@ -25,6 +27,62 @@ export async function getAllInstructors() {
 
 export async function getInstructorBySlug(slug: string) {
   return client.fetch(INSTRUCTOR_BY_SLUG_QUERY, { slug })
+}
+
+/** An instructor plus the courses they teach (reverse reference). */
+export async function getInstructorPage(slug: string) {
+  const startedAt = Date.now()
+
+  let instructor
+  try {
+    instructor = await client.fetch(INSTRUCTOR_BY_SLUG_QUERY, { slug })
+    await logContentRequest({
+      operation: 'get_instructor',
+      status: 'success',
+      durationMs: Date.now() - startedAt,
+      resultCount: instructor ? 1 : 0,
+    })
+  } catch (error) {
+    await logContentRequest({
+      operation: 'get_instructor',
+      status: 'error',
+      durationMs: Date.now() - startedAt,
+      errorType: error instanceof Error ? error.name : 'unknown',
+    })
+    throw error
+  }
+
+  if (!instructor?._id) return null
+
+  const courses = await client.fetch(COURSES_BY_INSTRUCTOR_QUERY, {
+    instructorId: instructor._id,
+  })
+
+  return { instructor, courses }
+}
+
+/** Every course with its lesson id/slug pairs, for the My Learning page. */
+export async function getMyLearningCourses() {
+  const startedAt = Date.now()
+
+  try {
+    const courses = await client.fetch(MY_LEARNING_COURSES_QUERY)
+    await logContentRequest({
+      operation: 'list_courses',
+      status: 'success',
+      durationMs: Date.now() - startedAt,
+      resultCount: courses.length,
+    })
+    return courses
+  } catch (error) {
+    await logContentRequest({
+      operation: 'list_courses',
+      status: 'error',
+      durationMs: Date.now() - startedAt,
+      errorType: error instanceof Error ? error.name : 'unknown',
+    })
+    throw error
+  }
 }
 
 export async function getAllCourses() {
@@ -153,6 +211,7 @@ export async function getLessonPage(slug: string) {
       slug: course.slug ?? '',
       coverImage: course.coverImage,
       level: course.level,
+      instructor: course.instructor ?? null,
     },
     modules,
     moduleIndex,

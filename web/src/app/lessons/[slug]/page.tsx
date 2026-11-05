@@ -12,6 +12,7 @@ import {
 import { Navbar } from "@/components/ui/navbar";
 import { Badge } from "@/components/ui/badge";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
+import { InstructorByline } from "@/components/ui/instructor-byline";
 import { LessonSidebar } from "@/components/lesson/lesson-sidebar";
 import { LessonVideo } from "@/components/lesson/lesson-video";
 import { LessonTabs } from "@/components/lesson/lesson-tabs";
@@ -20,6 +21,7 @@ import { LessonResourceCard } from "@/components/lesson/lesson-resource-card";
 import { LessonFooterNav } from "@/components/lesson/lesson-footer-nav";
 import { LessonViewTracker } from "@/components/analytics/lesson-view-tracker";
 import { getLessonPage } from "@/sanity/lib/data";
+import { courseProgress, getUserProgress } from "@/sanity/lib/progress";
 import { urlFor } from "@/sanity/lib/image";
 import { formatDuration, formatLevel } from "@/lib/format";
 
@@ -51,7 +53,17 @@ export default async function LessonPage({
     nextLesson,
   } = data;
 
-  const startSeconds = parseStartSeconds(t);
+  // Progress is per-learner app state, read server-side scoped to this user.
+  const progress = await getUserProgress(userId);
+  const courseLessonIds = modules.flatMap((m) => m.lessons.map((l) => l._id));
+  const { percent } = courseProgress(progress, courseLessonIds);
+  const lessonCompleted = progress.completed.has(lesson._id);
+  const resumeSeconds = Math.floor(progress.positions.get(lesson._id) ?? 0);
+
+  // A `?t=` from search wins for the initial seek; otherwise resume where the
+  // learner left off.
+  const requestedStart = parseStartSeconds(t);
+  const startSeconds = requestedStart > 0 ? requestedStart : resumeSeconds;
   const notes = lesson.notes ?? [];
   const introBlock = notes.find(
     (block) => (block.style ?? "normal") === "normal" && !block.listItem,
@@ -84,6 +96,8 @@ export default async function LessonPage({
           currentModuleIndex={moduleIndex}
           currentLessonId={lesson._id}
           showProgress={Boolean(userId)}
+          percent={percent}
+          completedLessonIds={Array.from(progress.completed)}
         />
 
         <main className="min-w-0 px-4 py-8 sm:px-9 lg:py-10">
@@ -138,11 +152,33 @@ export default async function LessonPage({
             </span>
           </div>
 
+          {course.instructor?.slug && (
+            <div className="mt-6">
+              <InstructorByline
+                name={course.instructor.name ?? ""}
+                slug={course.instructor.slug}
+                photoUrl={
+                  course.instructor.photo
+                    ? urlFor(course.instructor.photo).width(64).height(64).url()
+                    : null
+                }
+                photoAlt={course.instructor.photo?.alt ?? undefined}
+              />
+            </div>
+          )}
+
           <div className="mt-8">
             <LessonVideo
               videoUrl={lesson.videoUrl ?? ""}
               title={lesson.title ?? "Lesson video"}
               startSeconds={startSeconds}
+              lessonId={lesson._id}
+              lessonSlug={lesson.slug ?? slug}
+              courseSlug={course.slug}
+              lessonLabel={lessonLabel}
+              durationSeconds={lesson.duration ?? 0}
+              canTrack={Boolean(userId)}
+              initiallyCompleted={lessonCompleted}
             />
           </div>
 

@@ -1,7 +1,9 @@
 import {CONTEXT_SCHEMA_TYPE_NAME} from '@sanity/context/studio'
 import type {StructureResolver} from 'sanity/structure'
 
-const HIDDEN_FROM_CONTENT = new Set(['video', CONTEXT_SCHEMA_TYPE_NAME])
+// `progress` is per-learner app state written by the web server, not authored
+// content — hide it from the desk alongside the other internal types.
+const HIDDEN_FROM_CONTENT = new Set(['video', 'progress', CONTEXT_SCHEMA_TYPE_NAME])
 
 // https://www.sanity.io/docs/structure-builder-cheat-sheet
 export const structure: StructureResolver = (S) =>

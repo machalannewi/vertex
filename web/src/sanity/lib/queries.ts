@@ -57,6 +57,8 @@ export const ALL_COURSES_QUERY = defineQuery(`
     "category": category->{title, "slug": slug.current, icon},
     "moduleCount": count(modules),
     "lessonCount": count(modules[].lessons),
+    "lessonIds": modules[].lessons[]._ref,
+    "firstLessonSlug": modules[0].lessons[0]->slug.current,
     "duration": math::sum(modules[].lessons[]->duration)
   }
 `)
@@ -91,6 +93,40 @@ export const COURSE_BY_SLUG_QUERY = defineQuery(`
   }
 `)
 
+// Every course in card shape, plus each lesson's id+slug, so the My Learning
+// page can compute per-course progress and link to the resume lesson.
+export const MY_LEARNING_COURSES_QUERY = defineQuery(`
+  *[_type == "course"] | order(title asc) {
+    _id,
+    title,
+    "slug": slug.current,
+    summary,
+    level,
+    "category": category->{title, "slug": slug.current, icon},
+    "moduleCount": count(modules),
+    "lessons": modules[].lessons[]->{ _id, "slug": slug.current },
+    "duration": math::sum(modules[].lessons[]->duration)
+  }
+`)
+
+// Courses taught by one instructor (reverse reference), card-shaped so the
+// instructor page can reuse CourseCard + per-card progress.
+export const COURSES_BY_INSTRUCTOR_QUERY = defineQuery(`
+  *[_type == "course" && instructor._ref == $instructorId] | order(title asc) {
+    _id,
+    title,
+    "slug": slug.current,
+    summary,
+    level,
+    "category": category->{title, "slug": slug.current, icon},
+    "moduleCount": count(modules),
+    "lessonCount": count(modules[].lessons),
+    "lessonIds": modules[].lessons[]._ref,
+    "firstLessonSlug": modules[0].lessons[0]->slug.current,
+    "duration": math::sum(modules[].lessons[]->duration)
+  }
+`)
+
 // A lesson doesn't store its parent course, so the course (and its full
 // module/lesson outline for the sidebar and prev/next) comes from a reverse
 // reference.
@@ -113,6 +149,7 @@ export const LESSON_PAGE_QUERY = defineQuery(`
       "slug": slug.current,
       coverImage,
       level,
+      "instructor": instructor->{name, "slug": slug.current, photo},
       modules[] {
         title,
         lessons[]-> {
@@ -124,6 +161,27 @@ export const LESSON_PAGE_QUERY = defineQuery(`
       }
     }
   }
+`)
+
+// Learner progress is app state (AGENTS.md §7): a per-user document whose id is
+// `progress.<sanitizedUserId>`, read server-side scoped to the current user.
+export const USER_PROGRESS_QUERY = defineQuery(`
+  *[_type == "progress" && _id == $id][0] {
+    userId,
+    lessons[] {
+      lessonId,
+      completed,
+      completedAt,
+      positionSeconds,
+      updatedAt
+    }
+  }
+`)
+
+// Minimal lookup so the progress route can clamp a resume position to the
+// lesson's real duration and reject an unknown lesson id.
+export const LESSON_DURATION_QUERY = defineQuery(`
+  *[_type == "lesson" && _id == $id][0] { _id, duration }
 `)
 
 // Grounds and hydrates search results. The agent only picks lesson ids and

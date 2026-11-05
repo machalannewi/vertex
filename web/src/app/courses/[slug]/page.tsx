@@ -10,10 +10,12 @@ import {
 } from "@/components/analytics/course-actions";
 import { Badge } from "@/components/ui/badge";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
+import { InstructorByline } from "@/components/ui/instructor-byline";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { LearningOutcomeCard } from "@/components/ui/learning-outcome-card";
 import { ModuleAccordion } from "@/components/ui/module-accordion";
 import { getCourseBySlug } from "@/sanity/lib/data";
+import { courseProgress, getUserProgress } from "@/sanity/lib/progress";
 import { urlFor } from "@/sanity/lib/image";
 import { formatDuration, formatLevel, formatStudentCount } from "@/lib/format";
 
@@ -34,6 +36,16 @@ export default async function CoursePage({
     0,
   );
   const firstLessonSlug = modules[0]?.lessons?.[0]?.slug;
+
+  // Per-learner progress (app state, read server-side scoped to this user).
+  const progress = await getUserProgress(userId);
+  const lessonIds = lessons.flatMap((lesson) =>
+    lesson?._id ? [lesson._id] : [],
+  );
+  const { percent, resumeLessonId } = courseProgress(progress, lessonIds);
+  const resumeSlug =
+    lessons.find((lesson) => lesson?._id === resumeLessonId)?.slug ??
+    firstLessonSlug;
 
   return (
     <div className="flex flex-1 flex-col bg-neutral-50">
@@ -74,6 +86,19 @@ export default async function CoursePage({
             <p className="max-w-2xl font-sans text-body-lg text-neutral-500">
               {course.summary}
             </p>
+
+            {course.instructor?.slug && (
+              <InstructorByline
+                name={course.instructor.name ?? ""}
+                slug={course.instructor.slug}
+                photoUrl={
+                  course.instructor.photo
+                    ? urlFor(course.instructor.photo).width(64).height(64).url()
+                    : null
+                }
+                photoAlt={course.instructor.photo?.alt ?? undefined}
+              />
+            )}
 
             <div className="flex flex-wrap items-center gap-6 font-sans text-body text-neutral-500">
               <span className="inline-flex items-center gap-1.5">
@@ -151,6 +176,7 @@ export default async function CoursePage({
                         title: lesson.title ?? "",
                         slug: lesson.slug ?? "",
                         duration: lesson.duration ?? 0,
+                        completed: progress.completed.has(lesson._id),
                       },
                     ]
                   : [],
@@ -165,13 +191,13 @@ export default async function CoursePage({
               <span className="font-sans text-body font-medium text-neutral-900">
                 Your Progress
               </span>
-              <ProgressBar value={0} className="max-w-sm" />
+              <ProgressBar value={percent} className="max-w-sm" />
             </div>
-            {firstLessonSlug && (
+            {resumeSlug && (
               <CourseStartLink
                 courseSlug={slug}
-                lessonSlug={firstLessonSlug}
-                label="Continue Learning"
+                lessonSlug={resumeSlug}
+                label={percent > 0 ? "Continue Learning" : "Start Course"}
                 source="progress_bar"
               />
             )}

@@ -12,7 +12,7 @@ export async function logContentRequest({
   resultCount,
   errorType,
 }: {
-  operation: "list_courses" | "get_course" | "get_lesson";
+  operation: "list_courses" | "get_course" | "get_lesson" | "get_instructor";
   status: "success" | "error";
   durationMs: number;
   resultCount?: number;

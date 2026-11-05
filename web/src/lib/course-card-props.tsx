@@ -1,9 +1,19 @@
 import { createElement } from "react";
 import { getLucideIcon } from "@/lib/icons";
 import { formatDuration, formatLevel } from "@/lib/format";
-import type { ALL_COURSES_QUERY_RESULT } from "../../sanity.types";
 
-export function getCourseCardProps(course: ALL_COURSES_QUERY_RESULT[number]) {
+// The subset of fields a course card needs. Any card-shaped GROQ result
+// (catalog, an instructor's courses) satisfies this structurally.
+export interface CourseCardSource {
+  title: string | null;
+  summary: string | null;
+  level: string | null;
+  duration: number | null;
+  moduleCount: number | null;
+  category: { icon: string | null } | null;
+}
+
+export function getCourseCardProps(course: CourseCardSource) {
   return {
     icon: createElement(getLucideIcon(course.category?.icon), {
       className: "h-5 w-5 text-white",

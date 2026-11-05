@@ -1,12 +1,16 @@
+import { auth } from "@clerk/nextjs/server";
 import { Navbar } from "@/components/ui/navbar";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { CourseCard } from "@/components/ui/course-card";
 import { TrackedCourseLink } from "@/components/analytics/tracked-course-link";
 import { getAllCourses } from "@/sanity/lib/data";
+import { courseProgress, getUserProgress } from "@/sanity/lib/progress";
 import { getCourseCardProps } from "@/lib/course-card-props";
 
 export default async function CoursesPage() {
   const courses = await getAllCourses();
+  const { userId } = await auth();
+  const progress = await getUserProgress(userId);
 
   return (
     <div className="flex flex-1 flex-col bg-neutral-50">
@@ -24,15 +28,24 @@ export default async function CoursesPage() {
 
         {courses.length > 0 ? (
           <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {courses.map((course) => (
-              <TrackedCourseLink
-                key={course._id}
-                courseSlug={course.slug}
-                source="course_catalog"
-              >
-                <CourseCard {...getCourseCardProps(course)} />
-              </TrackedCourseLink>
-            ))}
+            {courses.map((course) => {
+              const lessonIds = (course.lessonIds ?? []).filter(
+                (id): id is string => Boolean(id),
+              );
+              const { percent } = courseProgress(progress, lessonIds);
+              return (
+                <TrackedCourseLink
+                  key={course._id}
+                  courseSlug={course.slug}
+                  source="course_catalog"
+                >
+                  <CourseCard
+                    {...getCourseCardProps(course)}
+                    progressPercent={userId ? percent : undefined}
+                  />
+                </TrackedCourseLink>
+              );
+            })}
           </div>
         ) : (
           <p className="mt-8 font-sans text-body text-neutral-500">
