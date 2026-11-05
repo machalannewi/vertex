@@ -7,6 +7,7 @@ import {
   ALL_INSTRUCTORS_QUERY,
   CATEGORY_BY_SLUG_QUERY,
   COURSE_BY_SLUG_QUERY,
+  COURSES_BY_INSTRUCTOR_QUERY,
   INSTRUCTOR_BY_SLUG_QUERY,
   LESSON_PAGE_QUERY,
 } from './queries'
@@ -25,6 +26,38 @@ export async function getAllInstructors() {
 
 export async function getInstructorBySlug(slug: string) {
   return client.fetch(INSTRUCTOR_BY_SLUG_QUERY, { slug })
+}
+
+/** An instructor plus the courses they teach (reverse reference). */
+export async function getInstructorPage(slug: string) {
+  const startedAt = Date.now()
+
+  let instructor
+  try {
+    instructor = await client.fetch(INSTRUCTOR_BY_SLUG_QUERY, { slug })
+    await logContentRequest({
+      operation: 'get_instructor',
+      status: 'success',
+      durationMs: Date.now() - startedAt,
+      resultCount: instructor ? 1 : 0,
+    })
+  } catch (error) {
+    await logContentRequest({
+      operation: 'get_instructor',
+      status: 'error',
+      durationMs: Date.now() - startedAt,
+      errorType: error instanceof Error ? error.name : 'unknown',
+    })
+    throw error
+  }
+
+  if (!instructor?._id) return null
+
+  const courses = await client.fetch(COURSES_BY_INSTRUCTOR_QUERY, {
+    instructorId: instructor._id,
+  })
+
+  return { instructor, courses }
 }
 
 export async function getAllCourses() {
@@ -153,6 +186,7 @@ export async function getLessonPage(slug: string) {
       slug: course.slug ?? '',
       coverImage: course.coverImage,
       level: course.level,
+      instructor: course.instructor ?? null,
     },
     modules,
     moduleIndex,

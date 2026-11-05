@@ -12,6 +12,7 @@ import {
 import { Navbar } from "@/components/ui/navbar";
 import { Badge } from "@/components/ui/badge";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
+import { InstructorByline } from "@/components/ui/instructor-byline";
 import { LessonSidebar } from "@/components/lesson/lesson-sidebar";
 import { LessonVideo } from "@/components/lesson/lesson-video";
 import { LessonTabs } from "@/components/lesson/lesson-tabs";
@@ -150,6 +151,21 @@ export default async function LessonPage({
               {(lesson.studentCount ?? 0).toLocaleString("en-US")} students
             </span>
           </div>
+
+          {course.instructor?.slug && (
+            <div className="mt-6">
+              <InstructorByline
+                name={course.instructor.name ?? ""}
+                slug={course.instructor.slug}
+                photoUrl={
+                  course.instructor.photo
+                    ? urlFor(course.instructor.photo).width(64).height(64).url()
+                    : null
+                }
+                photoAlt={course.instructor.photo?.alt ?? undefined}
+              />
+            </div>
+          )}
 
           <div className="mt-8">
             <LessonVideo

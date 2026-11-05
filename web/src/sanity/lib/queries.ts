@@ -93,6 +93,24 @@ export const COURSE_BY_SLUG_QUERY = defineQuery(`
   }
 `)
 
+// Courses taught by one instructor (reverse reference), card-shaped so the
+// instructor page can reuse CourseCard + per-card progress.
+export const COURSES_BY_INSTRUCTOR_QUERY = defineQuery(`
+  *[_type == "course" && instructor._ref == $instructorId] | order(title asc) {
+    _id,
+    title,
+    "slug": slug.current,
+    summary,
+    level,
+    "category": category->{title, "slug": slug.current, icon},
+    "moduleCount": count(modules),
+    "lessonCount": count(modules[].lessons),
+    "lessonIds": modules[].lessons[]._ref,
+    "firstLessonSlug": modules[0].lessons[0]->slug.current,
+    "duration": math::sum(modules[].lessons[]->duration)
+  }
+`)
+
 // A lesson doesn't store its parent course, so the course (and its full
 // module/lesson outline for the sidebar and prev/next) comes from a reverse
 // reference.
@@ -115,6 +133,7 @@ export const LESSON_PAGE_QUERY = defineQuery(`
       "slug": slug.current,
       coverImage,
       level,
+      "instructor": instructor->{name, "slug": slug.current, photo},
       modules[] {
         title,
         lessons[]-> {

@@ -10,6 +10,7 @@ import {
 } from "@/components/analytics/course-actions";
 import { Badge } from "@/components/ui/badge";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
+import { InstructorByline } from "@/components/ui/instructor-byline";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { LearningOutcomeCard } from "@/components/ui/learning-outcome-card";
 import { ModuleAccordion } from "@/components/ui/module-accordion";
@@ -85,6 +86,19 @@ export default async function CoursePage({
             <p className="max-w-2xl font-sans text-body-lg text-neutral-500">
               {course.summary}
             </p>
+
+            {course.instructor?.slug && (
+              <InstructorByline
+                name={course.instructor.name ?? ""}
+                slug={course.instructor.slug}
+                photoUrl={
+                  course.instructor.photo
+                    ? urlFor(course.instructor.photo).width(64).height(64).url()
+                    : null
+                }
+                photoAlt={course.instructor.photo?.alt ?? undefined}
+              />
+            )}
 
             <div className="flex flex-wrap items-center gap-6 font-sans text-body text-neutral-500">
               <span className="inline-flex items-center gap-1.5">

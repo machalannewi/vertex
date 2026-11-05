@@ -9,7 +9,7 @@ export function TrackedCourseLink({
   children,
 }: {
   courseSlug: string | null;
-  source: "home" | "course_catalog";
+  source: "home" | "course_catalog" | "instructor_page";
   children: React.ReactNode;
 }) {
   if (!courseSlug) return children;
