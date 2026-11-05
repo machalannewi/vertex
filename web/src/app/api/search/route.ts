@@ -1,6 +1,8 @@
+import { APICallError, RetryError } from "ai";
 import { z } from "zod";
 
-import { runSearchAgent } from "@/lib/search/agent";
+import { logSearchRequest } from "@/lib/posthog-logger";
+import { runSearchAgent, runStep, SearchStepError } from "@/lib/search/agent";
 import {
   getCachedResults,
   isRateLimited,
@@ -15,6 +17,26 @@ export const maxDuration = 60;
 const requestSchema = z.object({
   query: z.string().trim().min(2).max(200),
 });
+
+// Only safe, short fields: the step, the error class, and the upstream HTTP
+// status and code (for example OpenAI's 429 `insufficient_quota`).
+function describeFailure(error: unknown) {
+  const step = error instanceof SearchStepError ? error.step : undefined;
+  let cause = error instanceof SearchStepError ? error.cause : error;
+  if (RetryError.isInstance(cause)) cause = cause.lastError;
+
+  const apiError = APICallError.isInstance(cause) ? cause : null;
+  const code = (apiError?.data as { error?: { code?: unknown } } | undefined)
+    ?.error?.code;
+
+  return {
+    failedStep: step,
+    errorType: cause instanceof Error ? cause.name : typeof cause,
+    errorStatus: apiError?.statusCode,
+    errorCode: typeof code === "string" ? code : undefined,
+    errorMessage: cause instanceof Error ? cause.message.slice(0, 300) : undefined,
+  };
+}
 
 function clientKey(request: Request): string {
   const forwarded = request.headers.get("x-forwarded-for");
@@ -49,6 +71,7 @@ export async function POST(request: Request) {
     async start(controller) {
       const send = (event: SearchStreamEvent) =>
         controller.enqueue(encoder.encode(`${JSON.stringify(event)}\n`));
+      const startedAt = Date.now();
 
       try {
         if (cached) {
@@ -60,14 +83,28 @@ export async function POST(request: Request) {
           send({ type: "status", message }),
         );
         send({ type: "status", message: "Preparing results…" });
-        const hydrated = await hydrateResults(agentResults);
+        const hydrated = await runStep("hydrate", () =>
+          hydrateResults(agentResults),
+        );
         setCachedResults(cacheKey, hydrated);
         send({ type: "results", ...hydrated });
+        await logSearchRequest({
+          status: "success",
+          durationMs: Date.now() - startedAt,
+          resultCount: hydrated.results.length,
+        });
       } catch (error) {
         console.error("[search] failed", error);
+        const failure = describeFailure(error);
         send({
           type: "error",
           message: "Search is unavailable right now. Please try again.",
+          step: failure.failedStep,
+        });
+        await logSearchRequest({
+          status: "error",
+          durationMs: Date.now() - startedAt,
+          ...failure,
         });
       } finally {
         controller.close();

@@ -6,6 +6,7 @@ import { generateText, Output, stepCountIs } from "ai";
 import { z } from "zod";
 
 import { buildSystemPrompt } from "./system-prompt";
+import type { SearchStep } from "./types";
 
 const DEFAULT_MODEL = "gpt-5-mini";
 const MAX_STEPS = 10;
@@ -33,6 +34,24 @@ const agentOutputSchema = z.object({
 });
 
 export type AgentResult = z.infer<typeof agentOutputSchema>["results"][number];
+
+export class SearchStepError extends Error {
+  constructor(
+    readonly step: SearchStep,
+    cause: unknown,
+  ) {
+    super(`Search failed at the ${step} step`, { cause });
+    this.name = "SearchStepError";
+  }
+}
+
+export async function runStep<T>(step: SearchStep, run: () => Promise<T>) {
+  try {
+    return await run();
+  } catch (error) {
+    throw new SearchStepError(step, error);
+  }
+}
 
 function requireEnv(name: string): string {
   const value = process.env[name];
@@ -66,26 +85,32 @@ export async function runSearchAgent(
   query: string,
   onStatus: (message: string) => void,
 ): Promise<AgentResult[]> {
-  const mcpUrl = requireEnv("SANITY_CONTEXT_MCP_URL");
-  const token = requireEnv("SANITY_API_READ_TOKEN");
-  requireEnv("OPENAI_API_KEY");
+  const { mcpUrl, token } = await runStep("config", async () => {
+    requireEnv("OPENAI_API_KEY");
+    return {
+      mcpUrl: requireEnv("SANITY_CONTEXT_MCP_URL"),
+      token: requireEnv("SANITY_API_READ_TOKEN"),
+    };
+  });
 
   let mcpClient: MCPClient | null = null;
 
   try {
-    const [client, initialContext] = await Promise.all([
-      createMCPClient({
-        transport: {
-          type: "http",
-          url: mcpUrl,
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      }),
-      fetchInitialContext(mcpUrl, token),
-    ]);
+    const [client, initialContext] = await runStep("mcp", () =>
+      Promise.all([
+        createMCPClient({
+          transport: {
+            type: "http",
+            url: mcpUrl,
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        }),
+        fetchInitialContext(mcpUrl, token),
+      ]),
+    );
     mcpClient = client;
 
-    const allTools = await mcpClient.tools();
+    const allTools = await runStep("mcp", () => client.tools());
     const tools = Object.fromEntries(
       ALLOWED_TOOLS.flatMap((name) =>
         allTools[name] ? [[name, allTools[name]]] : [],
@@ -94,19 +119,20 @@ export async function runSearchAgent(
 
     onStatus("Searching lessons and videos…");
 
-    const { output } = await generateText({
-      model: openai(process.env.OPENAI_MODEL || DEFAULT_MODEL),
-      instructions: buildSystemPrompt(initialContext),
-      prompt: `Search query: ${JSON.stringify(query)}`,
-      tools,
-      output: Output.object({ schema: agentOutputSchema }),
-      stopWhen: stepCountIs(MAX_STEPS),
-      onStepEnd({ toolCalls }) {
-        if (toolCalls.length > 0) onStatus("Matching chapters and lessons…");
-      },
+    return await runStep("llm", async () => {
+      const { output } = await generateText({
+        model: openai(process.env.OPENAI_MODEL || DEFAULT_MODEL),
+        instructions: buildSystemPrompt(initialContext),
+        prompt: `Search query: ${JSON.stringify(query)}`,
+        tools,
+        output: Output.object({ schema: agentOutputSchema }),
+        stopWhen: stepCountIs(MAX_STEPS),
+        onStepEnd({ toolCalls }) {
+          if (toolCalls.length > 0) onStatus("Matching chapters and lessons…");
+        },
+      });
+      return output.results;
     });
-
-    return output.results;
   } finally {
     await mcpClient?.close();
   }

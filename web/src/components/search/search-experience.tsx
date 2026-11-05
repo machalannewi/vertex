@@ -43,6 +43,11 @@ async function readSearchStream(
 
   if (!response.ok || !response.body) {
     const body = await response.json().catch(() => null);
+    captureEvent("search_failed", {
+      step: "request",
+      http_status: response.status,
+      query_length: query.length,
+    });
     onEvent({
       type: "error",
       message: body?.error ?? "Search is unavailable right now. Please try again.",
@@ -83,6 +88,11 @@ export function SearchExperience({ query }: { query: string }) {
         setState({ status: "loading", message: event.message });
       } else if (event.type === "error") {
         setState({ status: "error", message: event.message });
+        captureEvent("search_failed", {
+          step: event.step ?? "unknown",
+          query_length: query.length,
+          duration_ms: Date.now() - startedAt,
+        });
       } else {
         setState({
           status: "done",
