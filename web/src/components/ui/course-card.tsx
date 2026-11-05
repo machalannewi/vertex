@@ -61,8 +61,13 @@ export function CourseCard({
       </div>
       {progressPercent !== undefined && progressPercent > 0 && (
         <div className="flex flex-col gap-1.5">
-          <span className="font-sans text-small font-medium text-primary-500">
-            Continue learning
+          <span
+            className={cn(
+              "font-sans text-small font-medium",
+              progressPercent >= 100 ? "text-emerald-500" : "text-primary-500",
+            )}
+          >
+            {progressPercent >= 100 ? "Completed" : "Continue learning"}
           </span>
           <ProgressBar value={progressPercent} />
         </div>

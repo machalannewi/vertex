@@ -93,6 +93,22 @@ export const COURSE_BY_SLUG_QUERY = defineQuery(`
   }
 `)
 
+// Every course in card shape, plus each lesson's id+slug, so the My Learning
+// page can compute per-course progress and link to the resume lesson.
+export const MY_LEARNING_COURSES_QUERY = defineQuery(`
+  *[_type == "course"] | order(title asc) {
+    _id,
+    title,
+    "slug": slug.current,
+    summary,
+    level,
+    "category": category->{title, "slug": slug.current, icon},
+    "moduleCount": count(modules),
+    "lessons": modules[].lessons[]->{ _id, "slug": slug.current },
+    "duration": math::sum(modules[].lessons[]->duration)
+  }
+`)
+
 // Courses taught by one instructor (reverse reference), card-shaped so the
 // instructor page can reuse CourseCard + per-card progress.
 export const COURSES_BY_INSTRUCTOR_QUERY = defineQuery(`

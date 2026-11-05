@@ -618,6 +618,39 @@ export type COURSE_BY_SLUG_QUERY_RESULT = {
 } | null;
 
 // Source: ../web/src/sanity/lib/queries.ts
+// Variable: MY_LEARNING_COURSES_QUERY
+// Query: *[_type == "course"] | order(title asc) {    _id,    title,    "slug": slug.current,    summary,    level,    "category": category->{title, "slug": slug.current, icon},    "moduleCount": count(modules),    "lessons": modules[].lessons[]->{ _id, "slug": slug.current },    "duration": math::sum(modules[].lessons[]->duration)  }
+export type MY_LEARNING_COURSES_QUERY_RESULT = Array<{
+  _id: string;
+  title: string | null;
+  slug: string | null;
+  summary: string | null;
+  level: "advanced" | "beginner" | "intermediate" | null;
+  category: {
+    title: string | null;
+    slug: string | null;
+    icon:
+      | "BarChart2"
+      | "Code"
+      | "Cpu"
+      | "Database"
+      | "Globe"
+      | "Layers"
+      | "LineChart"
+      | "Palette"
+      | "ShieldCheck"
+      | "Smartphone"
+      | null;
+  } | null;
+  moduleCount: number | null;
+  lessons: Array<{
+    _id: string;
+    slug: string | null;
+  }> | null;
+  duration: number | null;
+}>;
+
+// Source: ../web/src/sanity/lib/queries.ts
 // Variable: COURSES_BY_INSTRUCTOR_QUERY
 // Query: *[_type == "course" && instructor._ref == $instructorId] | order(title asc) {    _id,    title,    "slug": slug.current,    summary,    level,    "category": category->{title, "slug": slug.current, icon},    "moduleCount": count(modules),    "lessonCount": count(modules[].lessons),    "lessonIds": modules[].lessons[]._ref,    "firstLessonSlug": modules[0].lessons[0]->slug.current,    "duration": math::sum(modules[].lessons[]->duration)  }
 export type COURSES_BY_INSTRUCTOR_QUERY_RESULT = Array<{
@@ -797,6 +830,7 @@ declare global {
     '\n  *[_type == "instructor" && slug.current == $slug][0] {\n    _id,\n    name,\n    "slug": slug.current,\n    photo,\n    expertise,\n    bio\n  }\n': INSTRUCTOR_BY_SLUG_QUERY_RESULT;
     '\n  *[_type == "course"] | order(title asc) {\n    _id,\n    title,\n    "slug": slug.current,\n    summary,\n    coverImage,\n    level,\n    price,\n    popular,\n    studentCount,\n    "instructor": instructor->{name, "slug": slug.current},\n    "category": category->{title, "slug": slug.current, icon},\n    "moduleCount": count(modules),\n    "lessonCount": count(modules[].lessons),\n    "lessonIds": modules[].lessons[]._ref,\n    "firstLessonSlug": modules[0].lessons[0]->slug.current,\n    "duration": math::sum(modules[].lessons[]->duration)\n  }\n': ALL_COURSES_QUERY_RESULT;
     '\n  *[_type == "course" && slug.current == $slug][0] {\n    _id,\n    title,\n    "slug": slug.current,\n    summary,\n    coverImage,\n    level,\n    price,\n    popular,\n    studentCount,\n    learningOutcomes,\n    "instructor": instructor->{_id, name, "slug": slug.current, photo, expertise, bio},\n    "category": category->{_id, title, "slug": slug.current, icon},\n    modules[] {\n      title,\n      summary,\n      lessons[]-> {\n        _id,\n        title,\n        "slug": slug.current,\n        duration,\n        freePreview,\n        thumbnail,\n        studentCount\n      }\n    }\n  }\n': COURSE_BY_SLUG_QUERY_RESULT;
+    '\n  *[_type == "course"] | order(title asc) {\n    _id,\n    title,\n    "slug": slug.current,\n    summary,\n    level,\n    "category": category->{title, "slug": slug.current, icon},\n    "moduleCount": count(modules),\n    "lessons": modules[].lessons[]->{ _id, "slug": slug.current },\n    "duration": math::sum(modules[].lessons[]->duration)\n  }\n': MY_LEARNING_COURSES_QUERY_RESULT;
     '\n  *[_type == "course" && instructor._ref == $instructorId] | order(title asc) {\n    _id,\n    title,\n    "slug": slug.current,\n    summary,\n    level,\n    "category": category->{title, "slug": slug.current, icon},\n    "moduleCount": count(modules),\n    "lessonCount": count(modules[].lessons),\n    "lessonIds": modules[].lessons[]._ref,\n    "firstLessonSlug": modules[0].lessons[0]->slug.current,\n    "duration": math::sum(modules[].lessons[]->duration)\n  }\n': COURSES_BY_INSTRUCTOR_QUERY_RESULT;
     '\n  *[_type == "lesson" && slug.current == $slug][0] {\n    _id,\n    title,\n    "slug": slug.current,\n    videoUrl,\n    duration,\n    freePreview,\n    studentCount,\n    notes,\n    keyPoints,\n    proTip,\n    resources,\n    "course": *[_type == "course" && references(^._id)][0] {\n      _id,\n      title,\n      "slug": slug.current,\n      coverImage,\n      level,\n      "instructor": instructor->{name, "slug": slug.current, photo},\n      modules[] {\n        title,\n        lessons[]-> {\n          _id,\n          title,\n          "slug": slug.current,\n          duration\n        }\n      }\n    }\n  }\n': LESSON_PAGE_QUERY_RESULT;
     '\n  *[_type == "lesson" && _id in $ids] {\n    _id,\n    title,\n    "slug": slug.current,\n    duration,\n    thumbnail,\n    keyPoints,\n    "intro": pt::text(notes[_type == "block" && (style == "normal" || !defined(style)) && !defined(listItem)][0...1]),\n    "course": *[_type == "course" && references(^._id)][0] {\n      title,\n      "slug": slug.current,\n      "icon": category->icon,\n      "modules": modules[] {\n        title,\n        "lessonIds": lessons[]._ref\n      }\n    },\n    "video": *[_type == "video" && url == ^.videoUrl][0] {\n      "chapterStarts": chapters[].startSeconds,\n      "chunkStarts": chunks[].startSeconds\n    }\n  }\n': SEARCH_HITS_QUERY_RESULT;

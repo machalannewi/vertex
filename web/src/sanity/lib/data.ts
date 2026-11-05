@@ -10,6 +10,7 @@ import {
   COURSES_BY_INSTRUCTOR_QUERY,
   INSTRUCTOR_BY_SLUG_QUERY,
   LESSON_PAGE_QUERY,
+  MY_LEARNING_COURSES_QUERY,
 } from './queries'
 
 export async function getAllCategories() {
@@ -58,6 +59,30 @@ export async function getInstructorPage(slug: string) {
   })
 
   return { instructor, courses }
+}
+
+/** Every course with its lesson id/slug pairs, for the My Learning page. */
+export async function getMyLearningCourses() {
+  const startedAt = Date.now()
+
+  try {
+    const courses = await client.fetch(MY_LEARNING_COURSES_QUERY)
+    await logContentRequest({
+      operation: 'list_courses',
+      status: 'success',
+      durationMs: Date.now() - startedAt,
+      resultCount: courses.length,
+    })
+    return courses
+  } catch (error) {
+    await logContentRequest({
+      operation: 'list_courses',
+      status: 'error',
+      durationMs: Date.now() - startedAt,
+      errorType: error instanceof Error ? error.name : 'unknown',
+    })
+    throw error
+  }
 }
 
 export async function getAllCourses() {

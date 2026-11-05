@@ -1,6 +1,14 @@
-import { clerkMiddleware } from "@clerk/nextjs/server";
+import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
-export default clerkMiddleware();
+// Per-learner pages are gated here, in middleware, not in client code
+// (AGENTS.md §7, §12). Browsing stays public; My Learning requires sign-in.
+const isProtectedRoute = createRouteMatcher(["/my-learning(.*)"]);
+
+export default clerkMiddleware(async (auth, request) => {
+  if (isProtectedRoute(request)) {
+    await auth.protect();
+  }
+});
 
 export const config = {
   matcher: [
