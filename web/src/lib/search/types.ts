@@ -31,7 +31,11 @@ export interface LessonSearchResult extends SearchResultBase {
 
 export type SearchResult = VideoSearchResult | LessonSearchResult;
 
+// The server step that failed: env config, the Context MCP, the LLM call, or
+// hydrating the picks from Sanity.
+export type SearchStep = "config" | "mcp" | "llm" | "hydrate";
+
 export type SearchStreamEvent =
   | { type: "status"; message: string }
   | { type: "results"; results: SearchResult[]; courseCount: number }
-  | { type: "error"; message: string };
+  | { type: "error"; message: string; step?: SearchStep };
