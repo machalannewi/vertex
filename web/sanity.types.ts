@@ -356,14 +356,39 @@ export type Geopoint = {
   alt?: number;
 };
 
+export type ProgressEntry = {
+  _type: "progressEntry";
+  lessonId?: string;
+  completed?: boolean;
+  completedAt?: string;
+  positionSeconds?: number;
+  updatedAt?: string;
+};
+
+export type Progress = {
+  _id: string;
+  _type: "progress";
+  _createdAt: string;
+  _updatedAt: string;
+  _rev: string;
+  userId?: string;
+  lessons?: Array<
+    {
+      _key: string;
+    } & ProgressEntry
+  >;
+};
+
 export type AllSanitySchemaTypes =
   | TranscriptChunk
   | Chapter
   | Resource
   | LearningOutcome
+  | ProgressEntry
   | LessonReference
   | Module
   | Video
+  | Progress
   | SanityImageAssetReference
   | Lesson
   | SanityImageCrop
@@ -508,6 +533,8 @@ export type ALL_COURSES_QUERY_RESULT = Array<{
   } | null;
   moduleCount: number | null;
   lessonCount: number | null;
+  lessonIds: Array<string> | null;
+  firstLessonSlug: string | null;
   duration: number | null;
 }>;
 
@@ -695,6 +722,28 @@ export type SEARCH_HITS_QUERY_RESULT = Array<{
   } | null;
 }>;
 
+// Source: ../web/src/sanity/lib/queries.ts
+// Variable: USER_PROGRESS_QUERY
+// Query: *[_type == "progress" && _id == $id][0] {    userId,    lessons[] {      lessonId,      completed,      completedAt,      positionSeconds,      updatedAt    }  }
+export type USER_PROGRESS_QUERY_RESULT = {
+  userId: string | null;
+  lessons: Array<{
+    lessonId: string | null;
+    completed: boolean | null;
+    completedAt: string | null;
+    positionSeconds: number | null;
+    updatedAt: string | null;
+  }> | null;
+} | null;
+
+// Source: ../web/src/sanity/lib/queries.ts
+// Variable: LESSON_DURATION_QUERY
+// Query: *[_type == "lesson" && _id == $id][0] { _id, duration }
+export type LESSON_DURATION_QUERY_RESULT = {
+  _id: string;
+  duration: number | null;
+} | null;
+
 // Query TypeMap
 declare global {
   interface SanityQueries {
@@ -702,10 +751,12 @@ declare global {
     '\n  *[_type == "category" && slug.current == $slug][0] {\n    _id,\n    title,\n    "slug": slug.current,\n    description,\n    icon\n  }\n': CATEGORY_BY_SLUG_QUERY_RESULT;
     '\n  *[_type == "instructor"] | order(name asc) {\n    _id,\n    name,\n    "slug": slug.current,\n    photo,\n    expertise,\n    bio\n  }\n': ALL_INSTRUCTORS_QUERY_RESULT;
     '\n  *[_type == "instructor" && slug.current == $slug][0] {\n    _id,\n    name,\n    "slug": slug.current,\n    photo,\n    expertise,\n    bio\n  }\n': INSTRUCTOR_BY_SLUG_QUERY_RESULT;
-    '\n  *[_type == "course"] | order(title asc) {\n    _id,\n    title,\n    "slug": slug.current,\n    summary,\n    coverImage,\n    level,\n    price,\n    popular,\n    studentCount,\n    "instructor": instructor->{name, "slug": slug.current},\n    "category": category->{title, "slug": slug.current, icon},\n    "moduleCount": count(modules),\n    "lessonCount": count(modules[].lessons),\n    "duration": math::sum(modules[].lessons[]->duration)\n  }\n': ALL_COURSES_QUERY_RESULT;
+    '\n  *[_type == "course"] | order(title asc) {\n    _id,\n    title,\n    "slug": slug.current,\n    summary,\n    coverImage,\n    level,\n    price,\n    popular,\n    studentCount,\n    "instructor": instructor->{name, "slug": slug.current},\n    "category": category->{title, "slug": slug.current, icon},\n    "moduleCount": count(modules),\n    "lessonCount": count(modules[].lessons),\n    "lessonIds": modules[].lessons[]._ref,\n    "firstLessonSlug": modules[0].lessons[0]->slug.current,\n    "duration": math::sum(modules[].lessons[]->duration)\n  }\n': ALL_COURSES_QUERY_RESULT;
     '\n  *[_type == "course" && slug.current == $slug][0] {\n    _id,\n    title,\n    "slug": slug.current,\n    summary,\n    coverImage,\n    level,\n    price,\n    popular,\n    studentCount,\n    learningOutcomes,\n    "instructor": instructor->{_id, name, "slug": slug.current, photo, expertise, bio},\n    "category": category->{_id, title, "slug": slug.current, icon},\n    modules[] {\n      title,\n      summary,\n      lessons[]-> {\n        _id,\n        title,\n        "slug": slug.current,\n        duration,\n        freePreview,\n        thumbnail,\n        studentCount\n      }\n    }\n  }\n': COURSE_BY_SLUG_QUERY_RESULT;
     '\n  *[_type == "lesson" && slug.current == $slug][0] {\n    _id,\n    title,\n    "slug": slug.current,\n    videoUrl,\n    duration,\n    freePreview,\n    studentCount,\n    notes,\n    keyPoints,\n    proTip,\n    resources,\n    "course": *[_type == "course" && references(^._id)][0] {\n      _id,\n      title,\n      "slug": slug.current,\n      coverImage,\n      level,\n      modules[] {\n        title,\n        lessons[]-> {\n          _id,\n          title,\n          "slug": slug.current,\n          duration\n        }\n      }\n    }\n  }\n': LESSON_PAGE_QUERY_RESULT;
     '\n  *[_type == "lesson" && _id in $ids] {\n    _id,\n    title,\n    "slug": slug.current,\n    duration,\n    thumbnail,\n    keyPoints,\n    "intro": pt::text(notes[_type == "block" && (style == "normal" || !defined(style)) && !defined(listItem)][0...1]),\n    "course": *[_type == "course" && references(^._id)][0] {\n      title,\n      "slug": slug.current,\n      "icon": category->icon,\n      "modules": modules[] {\n        title,\n        "lessonIds": lessons[]._ref\n      }\n    },\n    "video": *[_type == "video" && url == ^.videoUrl][0] {\n      "chapterStarts": chapters[].startSeconds,\n      "chunkStarts": chunks[].startSeconds\n    }\n  }\n': SEARCH_HITS_QUERY_RESULT;
+    '\n  *[_type == "progress" && _id == $id][0] {\n    userId,\n    lessons[] {\n      lessonId,\n      completed,\n      completedAt,\n      positionSeconds,\n      updatedAt\n    }\n  }\n': USER_PROGRESS_QUERY_RESULT;
+    '\n  *[_type == "lesson" && _id == $id][0] { _id, duration }\n': LESSON_DURATION_QUERY_RESULT;
   }
 }
 // Lets @sanity/client releases that predate the global registry read it too

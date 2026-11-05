@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, ChevronDown, Play } from "lucide-react";
+import { ArrowLeft, CheckCircle2, ChevronDown, Play } from "lucide-react";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { captureEvent } from "@/components/analytics/capture-event";
 import { formatDuration } from "@/lib/format";
@@ -17,6 +17,7 @@ function ModuleItem({
   isLastInTimeline,
   inTimeline,
   currentLessonId,
+  completedIds,
   courseSlug,
 }: {
   courseModule: OutlineModule;
@@ -25,6 +26,7 @@ function ModuleItem({
   isLastInTimeline: boolean;
   inTimeline: boolean;
   currentLessonId: string;
+  completedIds: Set<string>;
   courseSlug: string;
 }) {
   const [open, setOpen] = useState(isCurrent);
@@ -92,6 +94,7 @@ function ModuleItem({
         <ol className="relative flex flex-col gap-1 pr-6 pb-4 pl-12">
           {courseModule.lessons.map((lesson) => {
             const isNowPlaying = lesson._id === currentLessonId;
+            const isCompleted = completedIds.has(lesson._id);
             return (
               <li key={lesson._id} className="relative">
                 <span
@@ -104,7 +107,9 @@ function ModuleItem({
                     "absolute top-3 -left-[12px] h-[7px] w-[7px] rounded-full border",
                     isNowPlaying
                       ? "border-primary-500 bg-primary-500"
-                      : "border-neutral-300 bg-white",
+                      : isCompleted
+                        ? "border-emerald-500 bg-emerald-500"
+                        : "border-neutral-300 bg-white",
                   )}
                 />
                 <Link
@@ -132,18 +137,28 @@ function ModuleItem({
                     <span
                       className={cn(
                         "font-sans text-small",
-                        isNowPlaying ? "text-primary-500" : "text-neutral-500",
+                        isNowPlaying
+                          ? "text-primary-500"
+                          : isCompleted
+                            ? "text-emerald-500"
+                            : "text-neutral-500",
                       )}
                     >
                       {isNowPlaying
                         ? "Now playing"
-                        : formatDuration(lesson.duration)}
+                        : isCompleted
+                          ? "Completed"
+                          : formatDuration(lesson.duration)}
                     </span>
                   </span>
-                  {isNowPlaying && (
+                  {isNowPlaying ? (
                     <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary-500 text-white">
                       <Play className="h-3 w-3 fill-current" />
                     </span>
+                  ) : (
+                    isCompleted && (
+                      <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-500" />
+                    )
                   )}
                 </Link>
               </li>
@@ -161,6 +176,8 @@ export function LessonSidebar({
   currentModuleIndex,
   currentLessonId,
   showProgress,
+  percent = 0,
+  completedLessonIds = [],
 }: {
   course: {
     title: string;
@@ -172,9 +189,12 @@ export function LessonSidebar({
   currentModuleIndex: number;
   currentLessonId: string;
   showProgress: boolean;
+  percent?: number;
+  completedLessonIds?: string[];
 }) {
   // Mobile starts collapsed and desktop starts expanded; the toggle flips both.
   const [toggled, setToggled] = useState(false);
+  const completedIds = new Set(completedLessonIds);
 
   return (
     <aside className="border-neutral-200 bg-white lg:border-r">
@@ -206,9 +226,9 @@ export function LessonSidebar({
             {showProgress && (
               <>
                 <span className="font-sans text-small text-neutral-500">
-                  0% complete
+                  {percent}% complete
                 </span>
-                <ProgressBar value={0} showLabel={false} className="w-18" />
+                <ProgressBar value={percent} showLabel={false} className="w-18" />
               </>
             )}
           </div>
@@ -240,6 +260,7 @@ export function LessonSidebar({
             inTimeline={moduleIndex <= currentModuleIndex}
             isLastInTimeline={moduleIndex === currentModuleIndex}
             currentLessonId={currentLessonId}
+            completedIds={completedIds}
             courseSlug={course.slug}
           />
         ))}

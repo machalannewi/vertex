@@ -57,6 +57,8 @@ export const ALL_COURSES_QUERY = defineQuery(`
     "category": category->{title, "slug": slug.current, icon},
     "moduleCount": count(modules),
     "lessonCount": count(modules[].lessons),
+    "lessonIds": modules[].lessons[]._ref,
+    "firstLessonSlug": modules[0].lessons[0]->slug.current,
     "duration": math::sum(modules[].lessons[]->duration)
   }
 `)
@@ -124,6 +126,27 @@ export const LESSON_PAGE_QUERY = defineQuery(`
       }
     }
   }
+`)
+
+// Learner progress is app state (AGENTS.md §7): a per-user document whose id is
+// `progress.<sanitizedUserId>`, read server-side scoped to the current user.
+export const USER_PROGRESS_QUERY = defineQuery(`
+  *[_type == "progress" && _id == $id][0] {
+    userId,
+    lessons[] {
+      lessonId,
+      completed,
+      completedAt,
+      positionSeconds,
+      updatedAt
+    }
+  }
+`)
+
+// Minimal lookup so the progress route can clamp a resume position to the
+// lesson's real duration and reject an unknown lesson id.
+export const LESSON_DURATION_QUERY = defineQuery(`
+  *[_type == "lesson" && _id == $id][0] { _id, duration }
 `)
 
 // Grounds and hydrates search results. The agent only picks lesson ids and

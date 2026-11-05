@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ChevronDown } from "lucide-react";
+import { CheckCircle2, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatDuration } from "@/lib/format";
 import { getLessonLabel } from "@/sanity/lib/numbering";
@@ -15,6 +15,7 @@ export interface ModuleAccordionLesson {
   title: string;
   slug: string;
   duration: number;
+  completed?: boolean;
 }
 
 export interface ModuleAccordionModule {
@@ -93,11 +94,16 @@ function ModuleRow({
               }
               className="flex items-center justify-between gap-4 rounded-sm px-3 py-2 hover:bg-neutral-50"
             >
-              <span className="font-sans text-body text-neutral-700">
-                <span className="text-neutral-500">
-                  {getLessonLabel(moduleIndex, lessonIndex)}
-                </span>{" "}
-                {lesson.title}
+              <span className="flex min-w-0 items-center gap-2 font-sans text-body text-neutral-700">
+                {lesson.completed && (
+                  <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" />
+                )}
+                <span className="truncate">
+                  <span className="text-neutral-500">
+                    {getLessonLabel(moduleIndex, lessonIndex)}
+                  </span>{" "}
+                  {lesson.title}
+                </span>
               </span>
               <span className="shrink-0 font-sans text-small text-neutral-500">
                 {formatDuration(lesson.duration)}
