@@ -49,7 +49,7 @@ export async function runStep<T>(step: SearchStep, run: () => Promise<T>) {
   try {
     return await run();
   } catch (error) {
-    throw error instanceof SearchStepError ? error : new SearchStepError(step, error);
+    throw new SearchStepError(step, error);
   }
 }
 
