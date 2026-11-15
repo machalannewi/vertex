@@ -1,14 +1,16 @@
 import "server-only";
 
 import { createMCPClient, type MCPClient } from "@ai-sdk/mcp";
-import { openai } from "@ai-sdk/openai";
-import { generateText, Output, stepCountIs } from "ai";
+import { google } from "@ai-sdk/google";
+import { generateText, stepCountIs } from "ai";
 import { z } from "zod";
 
 import { buildSystemPrompt } from "./system-prompt";
 
-const DEFAULT_MODEL = "gpt-5-mini";
-const MAX_STEPS = 10;
+const DEFAULT_MODEL = "gemini-3.5-flash-lite";
+// Bound the tool loop so the whole agent run stays under the serverless
+// function's time limit.
+const MAX_STEPS = 6;
 
 // Only these MCP tools reach the model. `initial_context` is already in the
 // system prompt, and `array_field_reader` could page through whole transcripts.
@@ -33,6 +35,31 @@ const agentOutputSchema = z.object({
 });
 
 export type AgentResult = z.infer<typeof agentOutputSchema>["results"][number];
+
+// Groq rejects JSON-schema structured output combined with tool calling, so the
+// model returns its final answer as JSON text. Pull the JSON object out of that
+// text (tolerating stray prose or code fences) and validate it with the schema.
+function parseAgentOutput(text: string): AgentResult[] {
+  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  const body = fenced ? fenced[1] : text;
+  const start = body.indexOf("{");
+  const end = body.lastIndexOf("}");
+  if (start === -1 || end === -1 || end < start) return [];
+
+  let data: unknown;
+  try {
+    data = JSON.parse(body.slice(start, end + 1));
+  } catch {
+    return [];
+  }
+
+  const result = agentOutputSchema.safeParse(data);
+  if (!result.success) {
+    console.error("[search] model output failed validation");
+    return [];
+  }
+  return result.data.results;
+}
 
 function requireEnv(name: string): string {
   const value = process.env[name];
@@ -68,7 +95,7 @@ export async function runSearchAgent(
 ): Promise<AgentResult[]> {
   const mcpUrl = requireEnv("SANITY_CONTEXT_MCP_URL");
   const token = requireEnv("SANITY_API_READ_TOKEN");
-  requireEnv("OPENAI_API_KEY");
+  requireEnv("GOOGLE_GENERATIVE_AI_API_KEY");
 
   let mcpClient: MCPClient | null = null;
 
@@ -94,19 +121,18 @@ export async function runSearchAgent(
 
     onStatus("Searching lessons and videos…");
 
-    const { output } = await generateText({
-      model: openai(process.env.OPENAI_MODEL || DEFAULT_MODEL),
+    const { text } = await generateText({
+      model: google(process.env.GOOGLE_MODEL || DEFAULT_MODEL),
       instructions: buildSystemPrompt(initialContext),
       prompt: `Search query: ${JSON.stringify(query)}`,
       tools,
-      output: Output.object({ schema: agentOutputSchema }),
       stopWhen: stepCountIs(MAX_STEPS),
       onStepEnd({ toolCalls }) {
         if (toolCalls.length > 0) onStatus("Matching chapters and lessons…");
       },
     });
 
-    return output.results;
+    return parseAgentOutput(text);
   } finally {
     await mcpClient?.close();
   }
