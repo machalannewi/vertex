@@ -63,7 +63,7 @@ function ModuleItem({
             "flex h-8 w-8 shrink-0 items-center justify-center rounded-full border font-sans text-body font-medium",
             isCurrent
               ? "border-primary-500 bg-primary-500 text-white"
-              : "border-neutral-200 bg-white text-neutral-700",
+              : "border-neutral-200 bg-surface text-neutral-700",
           )}
         >
           {moduleIndex + 1}
@@ -109,7 +109,7 @@ function ModuleItem({
                       ? "border-primary-500 bg-primary-500"
                       : isCompleted
                         ? "border-emerald-500 bg-emerald-500"
-                        : "border-neutral-300 bg-white",
+                        : "border-neutral-300 bg-surface",
                   )}
                 />
                 <Link
@@ -197,7 +197,7 @@ export function LessonSidebar({
   const completedIds = new Set(completedLessonIds);
 
   return (
-    <aside className="border-neutral-200 bg-white lg:border-r">
+    <aside className="border-neutral-200 bg-surface lg:border-r">
       <div className="px-6 pt-8 pb-6">
         <Link
           href={`/courses/${course.slug}`}
@@ -208,7 +208,7 @@ export function LessonSidebar({
         </Link>
 
         <div className="mt-8 flex items-center gap-4">
-          <div className="h-14 w-14 shrink-0 overflow-hidden rounded-sm bg-neutral-900">
+          <div className="h-14 w-14 shrink-0 overflow-hidden rounded-sm bg-surface-raised">
             {course.coverUrl && (
               <Image
                 src={course.coverUrl}

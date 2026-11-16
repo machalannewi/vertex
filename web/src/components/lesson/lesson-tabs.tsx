@@ -60,7 +60,7 @@ export function LessonTabs({ content }: { content: ReactNode }) {
         <textarea
           rows={8}
           placeholder="Write your notes for this lesson…"
-          className="w-full resize-y rounded-md border border-neutral-200 bg-white p-4 font-sans text-body-lg text-neutral-900 placeholder:text-neutral-300 focus:border-primary-300 focus:outline-none"
+          className="w-full resize-y rounded-md border border-neutral-200 bg-surface p-4 font-sans text-body-lg text-neutral-900 placeholder:text-neutral-300 focus:border-primary-300 focus:outline-none"
         />
         <p className="mt-2 font-sans text-small text-neutral-500">
           Notes aren&apos;t saved yet.

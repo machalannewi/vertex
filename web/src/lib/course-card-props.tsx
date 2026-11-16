@@ -18,7 +18,7 @@ export function getCourseCardProps(course: CourseCardSource) {
     icon: createElement(getLucideIcon(course.category?.icon), {
       className: "h-5 w-5 text-white",
     }),
-    iconClassName: "bg-neutral-900",
+    iconClassName: "bg-gradient-to-br from-primary-400 to-primary-700",
     title: course.title ?? "",
     description: course.summary ?? "",
     level: formatLevel(course.level ?? ""),

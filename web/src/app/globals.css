@@ -1,24 +1,38 @@
 @import "tailwindcss";
 
+/*
+ * Vertex dark theme (REDSUN-style, see prompts/redsun-redesign.md).
+ * The neutral scale is remapped so existing utilities keep their meaning:
+ * neutral-900 = primary text, neutral-500 = muted text, neutral-200 = border,
+ * neutral-50 = page background. Cards use the `surface` tokens.
+ */
 :root {
-  /* Primary */
+  color-scheme: dark;
+
+  /* Primary (orange) */
+  --color-primary-700: #c2410c;
+  --color-primary-600: #ea580c;
   --color-primary-500: #f97316;
   --color-primary-400: #fb923c;
   --color-primary-300: #fdba74;
-  --color-primary-200: #fed7aa;
-  --color-primary-100: #ffeee5;
+  --color-primary-200: #3a1d0b;
+  --color-primary-100: #24130a;
 
-  /* Neutral */
-  --color-neutral-900: #0f172a;
-  --color-neutral-700: #33415f;
-  --color-neutral-500: #64748b;
-  --color-neutral-300: #cbd5e1;
-  --color-neutral-200: #e2e8f0;
-  --color-neutral-100: #f1f5f9;
-  --color-neutral-50: #fafafc;
-  --color-white: #ffffff;
+  /* Neutral (dark-remapped) */
+  --color-neutral-900: #f4f4f5;
+  --color-neutral-700: #c7c9d1;
+  --color-neutral-500: #8b8e98;
+  --color-neutral-300: #4a4d57;
+  --color-neutral-200: #24262d;
+  --color-neutral-100: #18191e;
+  --color-neutral-50: #0a0a0c;
 
-  --background: var(--color-white);
+  /* Surfaces */
+  --color-surface: #111216;
+  --color-surface-raised: #17181d;
+  --color-ink: #050506;
+
+  --background: var(--color-neutral-50);
   --foreground: var(--color-neutral-900);
 
   /* Radius */
@@ -29,17 +43,20 @@
   --radius-xl: 24px;
   --radius-full: 9999px;
 
-  /* Shadows */
-  --shadow-sm: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
-  --shadow-md: 0 4px 12px -2px rgba(15, 23, 42, 0.08);
-  --shadow-lg: 0 12px 24px -4px rgba(15, 23, 42, 0.1);
-  --shadow-xl: 0 20px 40px -8px rgba(15, 23, 42, 0.12);
+  /* Shadows (deep, for dark surfaces) */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 6px 16px -4px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 16px 32px -8px rgba(0, 0, 0, 0.55);
+  --shadow-xl: 0 24px 48px -12px rgba(0, 0, 0, 0.6);
+  --shadow-glow: 0 0 28px -4px rgba(249, 115, 22, 0.55);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
 
+  --color-primary-700: var(--color-primary-700);
+  --color-primary-600: var(--color-primary-600);
   --color-primary-500: var(--color-primary-500);
   --color-primary-400: var(--color-primary-400);
   --color-primary-300: var(--color-primary-300);
@@ -54,8 +71,12 @@
   --color-neutral-100: var(--color-neutral-100);
   --color-neutral-50: var(--color-neutral-50);
 
-  --font-display: var(--font-playfair-display);
-  --font-sans: var(--font-inter);
+  --color-surface: var(--color-surface);
+  --color-surface-raised: var(--color-surface-raised);
+  --color-ink: var(--color-ink);
+
+  --font-display: var(--font-mulish);
+  --font-sans: var(--font-mulish);
 
   --radius-xs: var(--radius-xs);
   --radius-sm: var(--radius-sm);
@@ -68,15 +89,20 @@
   --shadow-md: var(--shadow-md);
   --shadow-lg: var(--shadow-lg);
   --shadow-xl: var(--shadow-xl);
+  --shadow-glow: var(--shadow-glow);
 
   /* Type scale */
+  --text-hero: 64px;
+  --text-hero--line-height: 72px;
+  --text-hero--font-weight: 600;
+
   --text-display-1: 48px;
   --text-display-1--line-height: 56px;
-  --text-display-1--font-weight: 700;
+  --text-display-1--font-weight: 600;
 
-  --text-display-2: 36px;
-  --text-display-2--line-height: 44px;
-  --text-display-2--font-weight: 700;
+  --text-display-2: 40px;
+  --text-display-2--line-height: 48px;
+  --text-display-2--font-weight: 600;
 
   --text-heading-1: 28px;
   --text-heading-1--line-height: 36px;
@@ -91,11 +117,11 @@
   --text-heading-3--font-weight: 500;
 
   --text-body-lg: 16px;
-  --text-body-lg--line-height: 24px;
+  --text-body-lg--line-height: 26px;
   --text-body-lg--font-weight: 400;
 
   --text-body: 14px;
-  --text-body--line-height: 20px;
+  --text-body--line-height: 22px;
   --text-body--font-weight: 400;
 
   --text-small: 12px;
@@ -107,4 +133,194 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
+
+::selection {
+  background: rgba(249, 115, 22, 0.35);
+  color: #fff;
+}
+
+/* ---------- Cards & glass ---------- */
+
+/* In the components layer so Tailwind utilities (border-*, shadow-*) can override. */
+@layer components {
+  /* Dark card with a faint top highlight, as in the reference. */
+  .card-glass {
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0) 40%),
+      var(--color-surface);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.05),
+      var(--shadow-lg);
+  }
+
+  /* Orange glow pooled at the bottom edge (CTA band). */
+  .glow-bottom {
+    box-shadow:
+      inset 0 -1px 0 rgba(249, 115, 22, 0.55),
+      0 24px 60px -24px rgba(249, 115, 22, 0.55);
+  }
+
+  .btn-glow {
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.08) inset,
+      0 8px 24px -6px rgba(249, 115, 22, 0.65);
+  }
+}
+
+/* ---------- Hero arc ("planet" lighting effect) ---------- */
+
+.hero-arc {
+  position: absolute;
+  left: 50%;
+  aspect-ratio: 1;
+  transform: translateX(-50%);
+  border-radius: 9999px;
+  pointer-events: none;
+}
+
+/* Halo behind the planet. */
+.hero-arc__halo {
+  inset: -8%;
+  position: absolute;
+  border-radius: 9999px;
+  background: radial-gradient(
+    closest-side,
+    rgba(249, 115, 22, 0.55),
+    rgba(234, 88, 12, 0.25) 55%,
+    rgba(234, 88, 12, 0) 75%
+  );
+  filter: blur(40px);
+  opacity: 0;
+  animation: arc-ignite 1.6s 0.25s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/*
+ * Planet body: dark core with an orange atmosphere along the upper edge.
+ * Inset shadows follow the circle's curve, so the glow hugs the arc.
+ */
+.hero-arc__body {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background:
+    radial-gradient(45% 18% at 66% 3%, rgba(253, 186, 116, 0.5), transparent 70%),
+    radial-gradient(closest-side, #0b0706 86%, #1c0d06 100%);
+  box-shadow:
+    inset 0 3px 1px -1px rgba(255, 255, 255, 0.95),
+    inset 0 22px 26px -10px rgba(253, 186, 116, 0.95),
+    inset 0 70px 80px -28px rgba(234, 88, 12, 0.9),
+    inset 0 150px 130px -60px rgba(124, 45, 18, 0.75),
+    0 -24px 90px -24px rgba(249, 115, 22, 0.55);
+  filter: brightness(0.22) saturate(0.5);
+  animation: arc-body-ignite 1.6s 0.25s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Thin white rim highlight that sweeps across the top. */
+.hero-arc__rim {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background:
+    conic-gradient(from 210deg, transparent 0deg, rgba(255, 255, 255, 0.9) 40deg, rgba(255, 255, 255, 0.15) 90deg, transparent 150deg)
+      border-box;
+  -webkit-mask:
+    linear-gradient(#000 0 0) padding-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  animation: arc-ignite 1.2s 0.6s ease-out forwards;
+}
+
+@keyframes arc-ignite {
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes arc-body-ignite {
+  to {
+    filter: brightness(1) saturate(1);
+  }
+}
+
+/* ---------- Light beam (bento "AI Search" card) ---------- */
+
+.light-beam {
+  background: linear-gradient(
+    180deg,
+    rgba(249, 115, 22, 0.95) 0%,
+    rgba(234, 88, 12, 0.75) 45%,
+    rgba(234, 88, 12, 0) 100%
+  );
+  clip-path: polygon(8% 0, 92% 0, 64% 100%, 36% 100%);
+  filter: blur(1px);
+}
+
+/* ---------- Marquee ---------- */
+
+.marquee {
+  mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+}
+
+.marquee__track {
+  animation: marquee 32s linear infinite;
+}
+
+.marquee:hover .marquee__track {
+  animation-play-state: paused;
+}
+
+@keyframes marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* ---------- Scroll reveal ---------- */
+
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition:
+    opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+
+.reveal[data-visible="true"] {
+  opacity: 1;
+  transform: none;
+}
+
+/* ---------- Glowing ring (features row 1) ---------- */
+
+.glow-ring {
+  border-radius: 9999px;
+  background:
+    radial-gradient(closest-side, transparent 62%, rgba(249, 115, 22, 0.95) 66%, rgba(234, 88, 12, 0.5) 72%, transparent 80%);
+  filter: drop-shadow(0 0 30px rgba(249, 115, 22, 0.6));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-arc__halo,
+  .hero-arc__rim {
+    opacity: 1;
+    animation: none;
+  }
+  .hero-arc__body {
+    filter: none;
+    animation: none;
+  }
+  .marquee__track {
+    animation: none;
+  }
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
 }

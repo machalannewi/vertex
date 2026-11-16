@@ -16,7 +16,7 @@ export function LearningOutcomeCard({
   return (
     <div
       className={cn(
-        "flex flex-col gap-3 rounded-md border border-neutral-200 bg-white p-4",
+        "flex flex-col gap-3 rounded-md border border-neutral-200 bg-surface p-4",
         className,
       )}
     >

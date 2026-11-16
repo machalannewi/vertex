@@ -7,9 +7,9 @@ const badgeVariants = cva(
   {
     variants: {
       variant: {
-        video: "bg-indigo-100 text-indigo-600",
-        lesson: "bg-sky-100 text-sky-600",
-        popular: "bg-primary-100 text-primary-500",
+        video: "bg-indigo-500/15 text-indigo-300",
+        lesson: "bg-sky-500/15 text-sky-300",
+        popular: "bg-primary-500/15 text-primary-400",
       },
     },
     defaultVariants: {

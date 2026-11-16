@@ -123,7 +123,7 @@ export default async function LessonPage({
             <button
               type="button"
               aria-label="Bookmark lesson"
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm border border-neutral-200 bg-white text-primary-500 hover:bg-primary-100"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm border border-neutral-200 bg-surface text-primary-500 hover:bg-primary-100"
             >
               <Bookmark className="h-4 w-4" />
             </button>

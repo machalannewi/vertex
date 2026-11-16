@@ -31,7 +31,7 @@ export function LessonFooterNav({
   }
 
   return (
-    <div className="sticky bottom-0 z-10 border-t border-neutral-200 bg-white">
+    <div className="sticky bottom-0 z-10 border-t border-neutral-200 bg-surface">
       <div className="mx-auto flex w-full max-w-360 items-center justify-between gap-4 px-4 py-4 sm:px-6">
         <div className="flex min-w-0 items-center gap-6">
           {previousLesson && (
