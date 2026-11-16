@@ -18,9 +18,9 @@ export function VideoResultCard({
     <Link
       href={`/lessons/${result.lessonSlug}?t=${result.startSeconds}`}
       onClick={onSelect}
-      className="group flex flex-col gap-5 rounded-md border border-neutral-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md md:flex-row"
+      className="group flex flex-col gap-5 rounded-md border border-neutral-200 bg-surface p-4 shadow-sm transition-shadow hover:shadow-md md:flex-row"
     >
-      <div className="relative aspect-video w-full shrink-0 overflow-hidden rounded-sm bg-neutral-900 md:w-[274px]">
+      <div className="relative aspect-video w-full shrink-0 overflow-hidden rounded-sm bg-ink md:w-[274px]">
         {result.thumbnailUrl && (
           <Image
             src={result.thumbnailUrl}
@@ -32,10 +32,10 @@ export function VideoResultCard({
         )}
         <span className="absolute inset-0 flex items-center justify-center">
           <span className="flex h-11 w-11 items-center justify-center rounded-full bg-white/95 shadow-md">
-            <Play className="ml-0.5 h-5 w-5 fill-neutral-900 text-neutral-900" />
+            <Play className="ml-0.5 h-5 w-5 fill-ink text-ink" />
           </span>
         </span>
-        <span className="absolute right-2 bottom-2 rounded-xs bg-neutral-900/90 px-1.5 py-0.5 font-sans text-small font-medium text-white">
+        <span className="absolute right-2 bottom-2 rounded-xs bg-black/80 px-1.5 py-0.5 font-sans text-small font-medium text-white">
           {formatTimestamp(result.duration)}
         </span>
       </div>

@@ -14,7 +14,7 @@ export function LessonResultCard({
     <Link
       href={`/lessons/${result.lessonSlug}`}
       onClick={onSelect}
-      className="group flex flex-col gap-5 rounded-md border border-neutral-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md md:flex-row"
+      className="group flex flex-col gap-5 rounded-md border border-neutral-200 bg-surface p-4 shadow-sm transition-shadow hover:shadow-md md:flex-row"
     >
       <div className="flex w-full shrink-0 gap-6 rounded-sm bg-neutral-50 p-4 md:w-[274px]">
         <FileText className="h-5 w-5 shrink-0 text-neutral-700" />

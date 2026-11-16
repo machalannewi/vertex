@@ -93,6 +93,20 @@ export const COURSE_BY_SLUG_QUERY = defineQuery(`
   }
 `)
 
+// The most-watched lessons that have a thumbnail, for the landing page's
+// "Fresh from the catalog" cards (narrowed to one per course in data.ts). The
+// parent course comes from a reverse reference (a lesson doesn't store it).
+export const FEATURED_LESSONS_QUERY = defineQuery(`
+  *[_type == "lesson" && defined(thumbnail.asset)] | order(studentCount desc)[0...40] {
+    _id,
+    title,
+    "slug": slug.current,
+    duration,
+    thumbnail,
+    "course": *[_type == "course" && references(^._id)][0] { title, "slug": slug.current }
+  }
+`)
+
 // Every course in card shape, plus each lesson's id+slug, so the My Learning
 // page can compute per-course progress and link to the resume lesson.
 export const MY_LEARNING_COURSES_QUERY = defineQuery(`

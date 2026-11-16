@@ -15,7 +15,7 @@ export function ResourceCard({
   return (
     <div
       className={cn(
-        "flex flex-col gap-3 rounded-md border border-neutral-200 bg-white p-4 shadow-sm",
+        "flex flex-col gap-3 rounded-md border border-neutral-200 bg-surface p-4 shadow-sm",
         className,
       )}
     >

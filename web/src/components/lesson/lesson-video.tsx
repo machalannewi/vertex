@@ -300,7 +300,7 @@ export function LessonVideo({
       <div
         role="group"
         aria-label={title}
-        className="aspect-video w-full overflow-hidden rounded-md bg-neutral-900 shadow-md"
+        className="aspect-video w-full overflow-hidden rounded-md bg-ink shadow-md"
       >
         {youTubeId ? (
           <div className="h-full w-full">

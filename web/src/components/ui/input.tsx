@@ -17,7 +17,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         <input
           ref={ref}
           className={cn(
-            "h-11 w-full rounded-md border border-neutral-200 bg-white px-4 font-sans text-body text-neutral-900 placeholder:text-neutral-500 outline-none focus:border-primary-400",
+            "h-11 w-full rounded-md border border-neutral-200 bg-surface px-4 font-sans text-body text-neutral-900 placeholder:text-neutral-500 outline-none focus:border-primary-400",
             icon && "pl-10",
             shortcut && "pr-12",
             className,

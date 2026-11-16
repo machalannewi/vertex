@@ -8,10 +8,59 @@ import {
   CATEGORY_BY_SLUG_QUERY,
   COURSE_BY_SLUG_QUERY,
   COURSES_BY_INSTRUCTOR_QUERY,
+  FEATURED_LESSONS_QUERY,
   INSTRUCTOR_BY_SLUG_QUERY,
   LESSON_PAGE_QUERY,
   MY_LEARNING_COURSES_QUERY,
 } from './queries'
+
+/**
+ * Everything the landing page shows, all from real content: catalog stats,
+ * courses ranked by popularity, categories, and a featured course's outline.
+ */
+export async function getLandingData() {
+  const [courses, categories, instructors, topLessons] = await Promise.all([
+    getAllCourses(),
+    client.fetch(ALL_CATEGORIES_QUERY),
+    client.fetch(ALL_INSTRUCTORS_QUERY),
+    client.fetch(FEATURED_LESSONS_QUERY),
+  ])
+
+  // One lesson per course, so the cards show the catalog's range.
+  const seenCourses = new Set<string>()
+  const featuredLessons = topLessons
+    .filter((lesson) => {
+      const key = lesson.course?.slug ?? lesson._id
+      if (seenCourses.has(key)) return false
+      seenCourses.add(key)
+      return true
+    })
+    .slice(0, 3)
+
+  const byPopularity = [...courses].sort(
+    (a, b) =>
+      Number(Boolean(b.popular)) - Number(Boolean(a.popular)) ||
+      (b.studentCount ?? 0) - (a.studentCount ?? 0),
+  )
+
+  const featured = byPopularity[0]
+  const featuredCourse = featured?.slug
+    ? await client.fetch(COURSE_BY_SLUG_QUERY, { slug: featured.slug })
+    : null
+
+  const totalSeconds = courses.reduce((sum, c) => sum + (c.duration ?? 0), 0)
+  const stats = {
+    courses: courses.length,
+    lessons: courses.reduce((sum, c) => sum + (c.lessonIds?.length ?? 0), 0),
+    instructors: instructors.length,
+    hours: Math.max(1, Math.round(totalSeconds / 3600)),
+    students: courses.reduce((sum, c) => sum + (c.studentCount ?? 0), 0),
+  }
+
+  return { courses, byPopularity, categories, featuredLessons, featuredCourse, stats }
+}
+
+export type LandingData = Awaited<ReturnType<typeof getLandingData>>
 
 export async function getAllCategories() {
   return client.fetch(ALL_CATEGORIES_QUERY)

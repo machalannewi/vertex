@@ -8,11 +8,11 @@ export const buttonVariants = cva(
     variants: {
       variant: {
         primary:
-          "bg-primary-500 text-white hover:bg-primary-500/90 disabled:bg-neutral-100 disabled:text-neutral-300",
+          "bg-primary-500 text-white shadow-[0_8px_24px_-6px_rgba(249,115,22,0.6)] hover:bg-primary-600 disabled:bg-neutral-100 disabled:text-neutral-300 disabled:shadow-none",
         secondary:
-          "border border-primary-500 bg-white text-primary-500 hover:bg-primary-100 disabled:border-neutral-200 disabled:text-neutral-300 disabled:hover:bg-white",
+          "border border-primary-500 bg-surface text-primary-500 hover:bg-primary-100 disabled:border-neutral-200 disabled:text-neutral-300 disabled:hover:bg-surface",
         tertiary:
-          "border border-neutral-200 bg-white text-neutral-900 hover:bg-neutral-50 disabled:text-neutral-300 disabled:hover:bg-white",
+          "border border-neutral-200 bg-surface text-neutral-900 hover:bg-neutral-50 disabled:text-neutral-300 disabled:hover:bg-surface",
         text: "text-primary-500 hover:text-primary-500/80 disabled:text-neutral-300",
       },
       size: {

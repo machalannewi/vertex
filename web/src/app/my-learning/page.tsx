@@ -80,7 +80,7 @@ export default async function MyLearningPage() {
         </h1>
 
         {!hasAny ? (
-          <div className="mt-8 rounded-md border border-neutral-200 bg-white p-10 text-center">
+          <div className="mt-8 rounded-md border border-neutral-200 bg-surface p-10 text-center">
             <p className="font-sans text-body-lg text-neutral-500">
               You haven&apos;t started any courses yet.
             </p>

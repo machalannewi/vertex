@@ -231,7 +231,7 @@ export default function StyleGuidePage() {
             {SHADOWS.map((s) => (
               <div
                 key={s.label}
-                className={`flex h-14 w-20 items-center justify-center rounded-sm bg-white font-sans text-small text-neutral-500 ${s.className}`}
+                className={`flex h-14 w-20 items-center justify-center rounded-sm bg-surface font-sans text-small text-neutral-500 ${s.className}`}
               >
                 {s.label}
               </div>

@@ -27,13 +27,13 @@ export function CourseCard({
   return (
     <div
       className={cn(
-        "flex flex-col gap-4 rounded-md border border-neutral-200 bg-white p-4 shadow-sm",
+        "card-glass flex flex-col gap-4 rounded-xl p-5 transition-colors hover:border-primary-500/40",
         className,
       )}
     >
       <div
         className={cn(
-          "flex h-10 w-10 items-center justify-center rounded-sm bg-neutral-900 font-display text-body-lg font-bold text-white",
+          "flex h-10 w-10 items-center justify-center rounded-sm bg-surface-raised font-display text-body-lg font-bold text-white",
           iconClassName,
         )}
       >

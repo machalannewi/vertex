@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import Image from "next/image";
+import { toPlainText, type PortableTextBlock } from "next-sanity";
 import { auth } from "@clerk/nextjs/server";
 import { Navbar } from "@/components/ui/navbar";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
@@ -24,6 +25,16 @@ export default async function InstructorPage({
 
   const expertise = instructor.expertise ?? [];
 
+  // The schema declares `bio` as plain text, but seeded data stores it as
+  // Portable Text blocks. Render either shape as plain text.
+  const rawBio: unknown = instructor.bio;
+  const bioText =
+    typeof rawBio === "string"
+      ? rawBio
+      : Array.isArray(rawBio)
+        ? toPlainText(rawBio as PortableTextBlock[])
+        : null;
+
   return (
     <div className="flex flex-1 flex-col bg-neutral-50">
       <Navbar showActions />
@@ -36,7 +47,7 @@ export default async function InstructorPage({
           ]}
         />
 
-        <section className="mt-6 flex flex-col gap-6 rounded-md border border-neutral-200 bg-white p-6 sm:flex-row sm:items-start">
+        <section className="card-glass mt-6 flex flex-col gap-6 rounded-xl p-6 sm:flex-row sm:items-start">
           <div className="h-28 w-28 shrink-0 overflow-hidden rounded-full bg-neutral-200">
             {instructor.photo && (
               <Image
@@ -59,7 +70,7 @@ export default async function InstructorPage({
                 {expertise.map((tag) => (
                   <span
                     key={tag}
-                    className="rounded-full bg-primary-100 px-3 py-1 font-sans text-small font-medium text-primary-500"
+                    className="rounded-full border border-primary-500/25 bg-primary-500/10 px-3 py-1 font-sans text-small font-medium text-primary-400"
                   >
                     {tag}
                   </span>
@@ -67,9 +78,9 @@ export default async function InstructorPage({
               </div>
             )}
 
-            {instructor.bio && (
+            {bioText && (
               <p className="max-w-2xl font-sans text-body-lg leading-7 text-neutral-500">
-                {instructor.bio}
+                {bioText}
               </p>
             )}
           </div>

@@ -11,7 +11,7 @@ export function ResultCourse({
 }) {
   return (
     <div className="flex min-w-0 items-center gap-2.5">
-      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-xs bg-neutral-900">
+      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-xs bg-gradient-to-br from-primary-400 to-primary-700">
         {createElement(getLucideIcon(icon), {
           className: "h-3 w-3 text-white",
           "aria-hidden": true,
@@ -30,8 +30,8 @@ export function ResultKindBadge({ kind }: { kind: "video" | "lesson" }) {
       className={cn(
         "inline-flex shrink-0 items-center rounded-xs px-2 py-0.5 font-sans text-small font-medium tracking-wide uppercase",
         kind === "video"
-          ? "bg-primary-100 text-primary-500"
-          : "bg-indigo-100 text-indigo-600",
+          ? "bg-primary-500/15 text-primary-400"
+          : "bg-indigo-500/15 text-indigo-300",
       )}
     >
       {kind}

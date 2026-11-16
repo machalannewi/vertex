@@ -132,10 +132,10 @@ export function SearchExperience({ query }: { query: string }) {
   return (
     <main className="mx-auto w-full max-w-5xl flex-1 px-4 pt-12 pb-16 sm:px-6 sm:pt-14">
       <div className="flex flex-col items-center text-center">
-        <span className="rounded-xs bg-primary-100 px-3 py-1 font-sans text-small font-medium tracking-wide text-primary-500 uppercase">
+        <span className="rounded-full border border-primary-500/30 bg-primary-500/10 px-3 py-1 font-sans text-small font-semibold tracking-wide text-primary-400 uppercase">
           Search results
         </span>
-        <h1 className="mt-4 font-display text-display-2 font-bold break-words text-neutral-900 sm:text-display-1">
+        <h1 className="mt-4 font-display text-display-2 font-semibold tracking-tight break-words text-neutral-900 sm:text-display-1">
           {hasQuery ? (
             <>
               Results for{" "}
@@ -188,7 +188,7 @@ export function SearchExperience({ query }: { query: string }) {
               Array.from({ length: 3 }, (_, i) => (
                 <div
                   key={i}
-                  className="flex animate-pulse flex-col gap-5 rounded-md border border-neutral-200 bg-white p-4 md:flex-row"
+                  className="flex animate-pulse flex-col gap-5 rounded-md border border-neutral-200 bg-surface p-4 md:flex-row"
                 >
                   <div className="aspect-video w-full rounded-sm bg-neutral-100 md:w-[274px]" />
                   <div className="flex flex-1 flex-col gap-3 py-2">
@@ -200,7 +200,7 @@ export function SearchExperience({ query }: { query: string }) {
               ))}
 
             {state.status === "error" && (
-              <div className="flex flex-col items-center gap-4 rounded-md border border-neutral-200 bg-white px-6 py-10 text-center">
+              <div className="flex flex-col items-center gap-4 rounded-md border border-neutral-200 bg-surface px-6 py-10 text-center">
                 <p className="font-sans text-body-lg text-neutral-700">
                   {state.message}
                 </p>
@@ -211,7 +211,7 @@ export function SearchExperience({ query }: { query: string }) {
             )}
 
             {state.status === "done" && state.results.length === 0 && (
-              <p className="rounded-md border border-neutral-200 bg-white px-6 py-10 text-center font-sans text-body-lg text-neutral-700">
+              <p className="rounded-md border border-neutral-200 bg-surface px-6 py-10 text-center font-sans text-body-lg text-neutral-700">
                 No results for &ldquo;{query}&rdquo;.
               </p>
             )}
@@ -249,7 +249,7 @@ export function SearchExperience({ query }: { query: string }) {
                 </div>
                 <Link
                   href="/courses"
-                  className="inline-flex h-11 shrink-0 items-center justify-center gap-3 rounded-sm border border-neutral-200 bg-white px-5 font-sans text-body font-medium text-primary-500 hover:bg-neutral-50"
+                  className="inline-flex h-11 shrink-0 items-center justify-center gap-3 rounded-sm border border-neutral-200 bg-surface px-5 font-sans text-body font-medium text-primary-500 hover:bg-neutral-50"
                 >
                   Browse all courses
                   <ArrowRight className="h-4 w-4" />

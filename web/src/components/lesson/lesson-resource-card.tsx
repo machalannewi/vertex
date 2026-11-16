@@ -33,7 +33,7 @@ export function LessonResourceCard({
       href={url}
       target="_blank"
       rel="noopener noreferrer"
-      className="group flex items-start gap-3 rounded-md border border-neutral-200 bg-white p-4 transition-colors hover:border-primary-200"
+      className="group flex items-start gap-3 rounded-md border border-neutral-200 bg-surface p-4 transition-colors hover:border-primary-200"
     >
       <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-sm border border-neutral-200 text-neutral-500">
         <Icon className="h-4 w-4" />

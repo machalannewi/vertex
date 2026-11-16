@@ -60,7 +60,7 @@ export default async function CoursePage({
         />
 
         <div className="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-[280px_1fr]">
-          <div className="aspect-square w-full overflow-hidden rounded-md bg-neutral-900 lg:h-70 lg:w-70">
+          <div className="aspect-square w-full overflow-hidden rounded-md bg-surface-raised lg:h-70 lg:w-70">
             {course.coverImage && (
               <Image
                 src={urlFor(course.coverImage).width(560).height(560).url()}
@@ -137,7 +137,7 @@ export default async function CoursePage({
           </div>
         </div>
 
-        <section className="mt-10 rounded-md border border-neutral-200 bg-white p-6">
+        <section className="mt-10 rounded-md border border-neutral-200 bg-surface p-6">
           <h2 className="font-display text-heading-1 font-semibold text-neutral-900">
             What you&apos;ll learn
           </h2>
@@ -153,7 +153,7 @@ export default async function CoursePage({
           </div>
         </section>
 
-        <section className="mt-8 rounded-md border border-neutral-200 bg-white">
+        <section className="mt-8 rounded-md border border-neutral-200 bg-surface">
           <div className="flex items-center justify-between px-6 py-5">
             <h2 className="font-display text-heading-1 font-semibold text-neutral-900">
               Course Content
@@ -186,7 +186,7 @@ export default async function CoursePage({
         </section>
 
         {userId && (
-          <div className="sticky bottom-0 mt-8 flex flex-col gap-4 rounded-md border border-neutral-200 bg-white p-4 shadow-lg sm:flex-row sm:items-center sm:justify-between">
+          <div className="sticky bottom-0 mt-8 flex flex-col gap-4 rounded-md border border-neutral-200 bg-surface p-4 shadow-lg sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-1 flex-col gap-1">
               <span className="font-sans text-body font-medium text-neutral-900">
                 Your Progress
