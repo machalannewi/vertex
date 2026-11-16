@@ -64,12 +64,12 @@ export function DashboardMockup({
   return (
     <div className={cn("card-glass overflow-hidden rounded-xl text-left", className)}>
       {/* App chrome */}
-      <div className="flex items-center gap-6 border-b border-white/5 px-5 py-3.5 sm:px-8">
+      <div className="flex items-center gap-6 border-b border-white/5 px-8 py-3.5">
         <span className="font-display text-body-lg font-extrabold tracking-tight text-neutral-900">
           VERTEX
           <span className="ml-0.5 inline-block h-1.5 w-1.5 -translate-y-2 rounded-full bg-primary-500" />
         </span>
-        <div className="hidden flex-1 items-center justify-center gap-6 md:flex">
+        <div className="flex flex-1 items-center justify-center gap-6">
           {TABS.map(({ label, icon: Icon, active }) => (
             <span
               key={label}
@@ -94,7 +94,7 @@ export function DashboardMockup({
         </div>
       </div>
 
-      <div className="p-5 sm:p-8">
+      <div className="p-8">
         <div className="flex items-center justify-between gap-4">
           <h3 className="font-display text-heading-2 font-semibold text-neutral-900">
             Dashboard
@@ -109,7 +109,7 @@ export function DashboardMockup({
         </div>
 
         {/* KPI cards */}
-        <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <div className="mt-6 grid grid-cols-4 gap-3">
           {kpis.map((kpi, i) => (
             <div
               key={kpi.label}
@@ -131,9 +131,9 @@ export function DashboardMockup({
           ))}
         </div>
 
-        <div className="mt-4 grid gap-4 lg:grid-cols-2">
+        <div className="mt-4 grid grid-cols-2 gap-4">
           {/* Continue learning list */}
-          <div className="rounded-lg border border-white/[0.07] bg-surface-raised/50 p-5">
+          <div className="min-w-0 rounded-lg border border-white/[0.07] bg-surface-raised/50 p-5">
             <h4 className="font-sans text-body font-semibold text-neutral-900">
               Continue learning
             </h4>
@@ -177,7 +177,7 @@ export function DashboardMockup({
           </div>
 
           {/* Minutes of video per course (real durations) */}
-          <div className="rounded-lg border border-white/[0.07] bg-surface-raised/50 p-5">
+          <div className="min-w-0 rounded-lg border border-white/[0.07] bg-surface-raised/50 p-5">
             <div className="flex items-start justify-between gap-3">
               <h4 className="font-sans text-body font-semibold text-neutral-900">
                 Video per course
@@ -195,7 +195,7 @@ export function DashboardMockup({
               <div className="flex h-36 flex-1 items-end justify-between gap-2 border-b border-white/5">
                 {chart.map((bar) => (
                   <div key={bar.label} className="flex h-full flex-1 items-end justify-center">
-                    <div className="relative flex h-full w-3 items-end justify-center rounded-t-xs bg-white/[0.04] sm:w-4">
+                    <div className="relative flex h-full w-4 items-end justify-center rounded-t-xs bg-white/[0.04]">
                       <span
                         className="w-full rounded-t-xs bg-gradient-to-t from-primary-700 to-primary-400 shadow-[0_0_12px_rgba(249,115,22,0.35)]"
                         style={{ height: `${(bar.minutes / axisMax) * 100}%` }}

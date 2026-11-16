@@ -2,6 +2,7 @@ import { Navbar } from "@/components/ui/navbar";
 import { Hero } from "@/components/landing/hero";
 import { ScrollRise } from "@/components/landing/scroll-rise";
 import { DashboardMockup } from "@/components/landing/dashboard-mockup";
+import { FitScale } from "@/components/landing/fit-scale";
 import { LogoMarquee } from "@/components/landing/logo-marquee";
 import { BentoGrid } from "@/components/landing/bento-grid";
 import { Features } from "@/components/landing/features";
@@ -23,7 +24,9 @@ export default async function Home() {
         <Hero />
         <div className="relative z-10 mx-auto -mt-24 max-w-6xl px-4 sm:-mt-36 sm:px-6">
           <ScrollRise>
-            <DashboardMockup stats={data.stats} courses={data.byPopularity} />
+            <FitScale width={1100}>
+              <DashboardMockup stats={data.stats} courses={data.byPopularity} />
+            </FitScale>
           </ScrollRise>
         </div>
         <LogoMarquee categories={data.categories} />
